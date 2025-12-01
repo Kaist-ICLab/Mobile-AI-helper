@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Senior User Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
+        h1 { color: #2196F3; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        input, button { padding: 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; }
+        input { flex: 1; }
+        button { background: #4CAF50; color: white; border: none; cursor: pointer; }
+        #messages { background: white; height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+        .message { margin: 10px 0; padding: 10px; border-radius: 8px; }
+        .user { background: #E3F2FD; text-align: right; }
+        .assistant { background: #C8E6C9; text-align: left; }
+        .info { background: #FFF3CD; padding: 10px; border-radius: 5px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <h1>👴 Senior User (Test)</h1>
+    
+    <div class="info">
+        <strong>Session ID:</strong> <span id="sessionId"></span><br>
+        <strong>Status:</strong> <span id="status">Not connected</span>
+    </div>
+
+    <div class="input-group">
+        <input id="sessionInput" placeholder="Enter session ID" />
+        <button onclick="connect()">Connect</button>
+    </div>
+
+    <div id="messages"></div>
+
+    <div class="input-group">
+        <input id="messageInput" placeholder="Type your message..." onkeypress="if(event.key==='Enter') sendMessage()" />
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+        let sessionId = '';
+        let polling = null;
+        let lastCount = 0;
+
+        function connect() {
+            sessionId = document.getElementById('sessionInput').value.trim() || 'test-' + Date.now();
+            document.getElementById('sessionInput').value = sessionId;
+            document.getElementById('sessionId').textContent = sessionId;
+            document.getElementById('status').textContent = 'Connected';
+            
+            if (polling) clearInterval(polling);
+            polling = setInterval(loadMessages, 1000);
+            loadMessages();
+        }
+
+        async function loadMessages() {
+            try {
+                const response = await fetch(`${API_URL}/sessions/${sessionId}`);
+                if (!response.ok) return;
+                
+                const data = await response.json();
+                const messages = data.messages || [];
+                
+                if (messages.length !== lastCount) {
+                    const messagesDiv = document.getElementById('messages');
+                    messagesDiv.innerHTML = '';
+                    messages.forEach(msg => {
+                        const div = document.createElement('div');
+                        div.className = `message ${msg.role}`;
+                        div.innerHTML = `<strong>${msg.role === 'user' ? 'You' : 'Assistant'}:</strong> ${msg.text}`;
+                        messagesDiv.appendChild(div);
+                    });
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                    lastCount = messages.length;
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            if (!text || !sessionId) return;
+
+            await fetch(`${API_URL}/message`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ session_id: sessionId, role: 'user', text })
+            });
+
+            input.value = '';
+        }
+
+        document.getElementById('sessionInput').value = 'test-' + Date.now();
+    </script>
+</body>
+</html>

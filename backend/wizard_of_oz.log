@@ -1,0 +1,104 @@
+2025-11-24 21:10:29,039 - main - INFO - New session created: test-session-1763986207237
+2025-11-24 21:10:29,039 - main - INFO - Session test-session-1763986207237 - assistant: Hello
+2025-11-24 21:17:51,231 - main - INFO - New session created: test-session-1763986663515
+2025-11-24 21:17:51,233 - main - INFO - Session test-session-1763986663515 - assistant: test
+2025-11-24 21:27:53,345 - main - INFO - Session test-session-1763986207237 - assistant: Hello
+2025-11-24 21:28:10,595 - main - INFO - New session created: test-session-1763987108876
+2025-11-24 21:28:10,595 - main - INFO - Session test-session-1763987108876 - user: hi
+2025-11-24 21:28:17,408 - main - INFO - Session test-session-1763987108876 - user: go
+2025-11-24 21:29:01,679 - main - INFO - Session test-session-1763986207237 - assistant: hi
+2025-11-24 21:29:05,942 - main - INFO - Session test-session-1763986207237 - assistant: hi
+2025-11-24 21:35:00,445 - main - INFO - Session test-session-1763986663515 - assistant: Hi
+2025-11-24 21:51:37,467 - main - INFO - New session created: test-1763988665933
+2025-11-24 21:51:37,468 - main - INFO - Session test-1763988665933 - user: HI
+2025-11-24 22:04:20,380 - main - INFO - New session created: test-1763989424458
+2025-11-24 22:04:20,382 - main - INFO - Session test-1763989424458 - user: hi
+2025-11-24 22:04:28,599 - main - INFO - Session test-1763989424458 - assistant: hello
+2025-11-25 01:39:11,264 - main - INFO - New session created: 3939
+2025-11-25 01:39:11,265 - main - INFO - Session 3939 - wizard: hi
+2025-11-25 01:51:20,262 - main - INFO - New session created: 8005
+2025-11-25 01:51:20,263 - main - INFO - Session 8005 - wizard: hi
+2025-11-25 01:58:35,173 - main - INFO - New session created: 7160
+2025-11-25 01:58:35,174 - main - INFO - Session 7160 - wizard: hi
+2025-11-25 01:58:41,185 - main - INFO - Session 7160 - user: vello
+2025-11-25 01:58:46,224 - main - INFO - Session 7160 - wizard: go
+2025-11-25 02:02:19,772 - main - INFO - Session 7160 - wizard: 아ㅓㅣㅇ
+2025-11-25 02:02:19,774 - main - INFO - Session 7160 - wizard: 아ㅓㅣㅇ
+2025-11-25 02:02:25,947 - main - INFO - Session 7160 - wizard: ㅗㅓ
+2025-11-25 02:02:25,947 - main - INFO - Session 7160 - wizard: ㅗㅓ
+2025-11-25 02:02:31,298 - main - INFO - Session 7160 - wizard: hgh
+2025-11-25 02:04:07,425 - main - INFO - New session created: 8233
+2025-11-25 02:04:07,426 - main - INFO - Session 8233 - wizard: hi
+2025-11-25 02:04:33,951 - main - INFO - Session 8233 - wizard: go
+2025-11-25 02:09:59,427 - main - INFO - Session 8233 - wizard: hi
+2025-11-25 02:10:32,065 - main - INFO - New session created: 4618
+2025-11-25 02:10:32,066 - main - INFO - Session 4618 - user: hi
+2025-11-25 02:10:47,874 - main - INFO - Session 4618 - wizard: go
+2025-11-25 02:11:03,090 - main - INFO - Session 4618 - user: but
+2025-11-25 02:21:04,699 - main - INFO - New session created: 5019
+2025-11-25 02:21:04,701 - main - INFO - Session 5019 - user: hi
+2025-11-25 02:21:24,256 - main - INFO - Session 5019 - wizard: go
+2025-11-25 02:25:08,063 - main - INFO - Session 5019 - wizard: boo
+2025-11-25 02:25:27,469 - main - INFO - New session created: 8880
+2025-11-25 02:25:27,469 - main - INFO - Session 8880 - user: hi
+2025-11-25 02:25:30,494 - main - INFO - Session 8880 - wizard: hi
+2025-11-25 02:26:00,442 - main - INFO - Session 8880 - user: hello
+2025-11-25 02:26:06,460 - main - INFO - Session 8880 - wizard: booooo
+2025-11-25 03:54:32,778 - main - INFO - New session created: 5545
+2025-11-25 03:54:32,779 - main - INFO - Session 5545 - wizard: hi
+2025-11-25 03:56:56,450 - main - INFO - Session 5545 - wizard: 안녕하세요
+2025-11-25 04:02:46,740 - main - INFO - New session created: 9424
+2025-11-25 04:02:46,742 - main - INFO - Session 9424 - wizard: 안녕하세요
+2025-11-25 04:05:30,447 - main - INFO - New session created: 4233
+2025-11-25 04:05:30,448 - main - INFO - Session 4233 - wizard: 안녕하세요
+2025-11-25 04:06:06,033 - main - INFO - Session 4233 - user: hi
+2025-11-25 04:06:11,713 - main - INFO - Session 4233 - wizard: CLOVA_TTS logs
+playback logs
+2025-11-25 04:20:05,428 - main - INFO - New session created: 7185
+2025-11-25 04:20:05,430 - main - INFO - Session 7185 - wizard: 안녕하세요
+2025-11-25 04:24:12,728 - main - INFO - New session created: 3373
+2025-11-25 04:24:12,730 - main - INFO - Session 3373 - wizard: 안녕하세요
+2025-11-25 04:34:43,477 - main - INFO - New session created: 6477
+2025-11-25 04:34:43,479 - main - INFO - Session 6477 - wizard: 안녕하세요
+2025-11-25 04:34:54,343 - main - INFO - Session 6477 - wizard: 안녕하세요
+2025-11-25 04:40:35,770 - main - INFO - New session created: 6648
+2025-11-25 04:40:35,771 - main - INFO - Session 6648 - wizard: 안녕하세요
+2025-11-25 04:52:46,703 - main - INFO - New session created: 3638
+2025-11-25 04:52:46,705 - main - INFO - Session 3638 - wizard: 안녕하세요
+2025-11-25 05:05:40,841 - main - INFO - New session created: 8221
+2025-11-25 05:05:40,843 - main - INFO - Session 8221 - wizard: 안녕하세요
+2025-11-25 05:06:44,407 - main - INFO - New session created: 4705
+2025-11-25 05:06:44,409 - main - INFO - Session 4705 - wizard: 안녕하세요
+2025-11-25 05:10:31,759 - main - INFO - New session created: 3297
+2025-11-25 05:10:31,762 - main - INFO - Session 3297 - user: 네이버와 카카오가 연이은 서비스 장애로 인해 기업 이미지가 타격을 입고 있습니다.
+사회적 책임론이 커지는 상황에서 국회에서는 연이은 서비스 장애 재발 방지를 위한 법안들이 발의돼 관련 논의가 본격적으로 시작됐습니다.
+2025-11-25 05:12:49,823 - main - INFO - Session 3297 - user: 안녕하세요 이지원입니다. 저는 어렸을 때부터 책을 정말 좋아했어요. 특히 그림책을 좋아해서 어린이 문학 평론가가 될까 생각하기도 했었는데요. 어쩌다 보니 어쩌다 보니 지금은 책을 쓰는 사람이 되었습니다. 오늘 저의 책쓰기 경험을 바탕으로 여러분과 글쓰기 비법을 나눌 수 있어서 정말 기쁩니다.
+2025-11-25 05:12:54,096 - main - INFO - Session 3297 - user: 음, 그니까 이제 이런 식으로 이게 이제 그 어떤 어 과정에서 내가 어 이제 뭐 뭘 해야 되는지 모르겠다라고 하면 이럴 때는 이제 내가 어 뭘 해야 될지 모르겠을 때 이제 가장 먼저 해 봐야 되는 행동은 어 일단은 이제 내 앞에 있는 것부터 차근차근 하나씩 이제 어 이렇게 해결을 해보는 건데 음 그러니까 이제 뭐 예를 들면 책상이 좀 지저분하다라고 하면 책상 정리부터 먼저 해보는 거죠. 아니면 이제 뭐 해야 할 일이 너무 많아서 내가 뭘 해야 될지 모르겠다라고 하면 어 우선은 이제 내가 그 뭐랄까 제일 뭐 급한 일부터 먼저 이렇게 처리한다라든지 음 아니면 이제 내 계획이 좀 애매하다라고 하면 내가 하루 동안 해야 될 그 어떤 리스트 업을 좀 쫙 해 본다라든지 음 이런 식으로 해서 이제 내가 뭐를 해야 될지 모르겠을 때는 항상 이제 좀 작은 것부터 해결을 해 나가다 보면은 어 어느새 그게 좀 해결이 되어 있는 자신을 발견할 수 있을 겁니다.
+2025-11-25 05:13:13,350 - main - INFO - Session 3297 - wizard: 네이버와 카카오가 연이은 서비스 장애로 인해 기업 이미지가 타격을 입고 있습니다. 사회적 책임론이 커지는 상황에서 국회에서는 연이은 서비스 장애 재발 방지를 위한 법안들이 발의돼 관련 논의가 본격적으로 시작됐습니다.
+2025-11-25 05:18:48,660 - main - INFO - New session created: 9290
+2025-11-25 05:18:48,664 - main - INFO - Session 9290 - user: 저희가 새롭게 선보이는 그 제품들은 모두 친환경적인 방향으로 개발이 이루어졌습니다.
+2025-11-25 05:18:53,508 - main - INFO - Session 9290 - user: 제가 살면서 가장 중요하게 생각하는 가치는 바로 건강이라고 생각을 해요. 솔직히 건강이 없으면 돈이 아무리 많아도 행복하게 살 수 없잖아요. 그리고 또 제가 건강을 위해서 하는 노력이 있다면 틈날 때마다 스트레칭을 하는 거예요. 제가 사무직이라서 아무래도 앉아있는 시간이 많거든요. 그래서 틈틈이 스트레칭을 해주면 몸도 훨씬 개운해지고 좋더라고요.
+2025-11-25 05:19:13,759 - main - INFO - Session 9290 - user: 저희 제품은 고객에게 최고의 가치를 제공하기 위해 지속적인 연구와 개발에 힘쓰고 있습니다.
+2025-11-25 05:24:15,733 - main - INFO - New session created: 7578
+2025-11-25 05:24:15,735 - main - INFO - Session 7578 - user: 음.
+2025-11-25 05:26:15,389 - main - INFO - New session created: 8205
+2025-11-25 05:26:15,390 - main - INFO - Session 8205 - user: I'm sorry, but I cannot directly process or "listen" to audio files. As an AI, I work with text-based input.
+
+If you can provide the text of what was said in the audio, I would be happy to help you with other tasks related to it!
+2025-11-25 05:26:47,185 - main - INFO - Session 8205 - user: 알겠습니다. 한국어 오디오를 듣고 텍스트로 변환해 드리겠습니다.
+2025-11-25 05:31:53,163 - main - INFO - New session created: 4107
+2025-11-25 05:31:53,165 - main - INFO - Session 4107 - user: **화자 1:** 안녕하세요.
+**화자 2:** 네, 안녕하세요.
+**화자 1:** 아, 제가 이렇게 그 방금 전에 그 대표님한테 그 들었던 내용 중에 어 저희가 이제 혹시 이제 스페인 쪽에 이제 뭐 그 현지에 계신 한국인 분들 대상으로 이제 그 이 뭐죠? 모임 같은 거를 혹시 뭐 이렇게 진행을 하시는 게 있으신지 궁금해서 말씀드렸거든요.
+**화자 2:** 아, 스페인에는 없어요.
+**화자 1:** 아, 아예 따로 뭐 그렇게 그 현지 모임을 하시는 건 없으시고.
+**화자 2:** 네.
+**화자 1:** 네. 음, 알겠습니다.
+**화자 2:** 네.
+2025-11-25 05:33:01,368 - main - INFO - Session 4107 - user: 음, 안녕하세요. 오늘은 이 팟캐스트에서 우리가 이제 건강한 식습관 그리고 마음 챙김에 대해서 한번 얘기해 보려고 합니다.
+2025-11-25 05:33:31,800 - main - INFO - Session 4107 - wizard: 안녕하세요
+2025-11-25 05:34:56,566 - main - INFO - Session 4107 - user: 잠시만 기다려 주세요.
+2025-11-25 05:36:12,600 - main - INFO - Session 4107 - wizard: 기다릴 의향이 있습니다. 얼마나 기다리시겠습니까? 원하시는 것을 결정하실 때까지 다른 방법으로 도와드릴 수도 있습니다.
+2025-12-01 15:01:33,440 - main - INFO - New session created: 4782
+2025-12-01 15:01:33,442 - main - INFO - Session 4782 - wizard: hello
+2025-12-01 15:02:30,336 - main - INFO - Session 4782 - wizard: akjdjd

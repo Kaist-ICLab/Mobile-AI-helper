@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wizard Console - Senior Helper</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #4CAF50;
+            color: white;
+            padding: 20px;
+        }
+
+        .header h1 {
+            margin-bottom: 10px;
+        }
+
+        .session-input {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .session-input input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .session-input button {
+            padding: 10px 20px;
+            background: white;
+            color: #4CAF50;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .session-input button:hover {
+            background: #f0f0f0;
+        }
+
+        .status {
+            padding: 15px 20px;
+            background: #f9f9f9;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ccc;
+        }
+
+        .status-dot.connected {
+            background: #4CAF50;
+        }
+
+        .messages {
+            height: 400px;
+            overflow-y: auto;
+            padding: 20px;
+            background: #fafafa;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 12px 15px;
+            border-radius: 8px;
+            max-width: 80%;
+        }
+
+        .message.user {
+            background: #E3F2FD;
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .message.wizard {
+            background: #C8E6C9;
+        }
+
+        .message-meta {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .message-text {
+            font-size: 15px;
+            line-height: 1.4;
+        }
+
+        .input-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #ddd;
+        }
+
+        .input-area textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            resize: vertical;
+            min-height: 80px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .input-area button {
+            margin-top: 10px;
+            padding: 12px 30px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .input-area button:hover {
+            background: #45a049;
+        }
+
+        .input-area button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .no-session {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧙‍♂️ Wizard Console</h1>
+            <p>Senior Helper - Wizard of Oz Interface</p>
+            <div class="session-input">
+                <input type="text" id="sessionIdInput" placeholder="Enter Session ID (e.g., 1234)" maxlength="4">
+                <button onclick="connectToSession()">Connect</button>
+            </div>
+        </div>
+
+        <div class="status">
+            <div class="status-indicator">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Not Connected</span>
+            </div>
+            <div>
+                <button onclick="refreshMessages()" style="padding: 5px 15px; border: 1px solid #ddd; background: white; border-radius: 3px; cursor: pointer;">Refresh</button>
+            </div>
+        </div>
+
+        <div class="messages" id="messagesContainer">
+            <div class="no-session">
+                <p>👆 Enter a Session ID to start</p>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <textarea id="replyText" placeholder="Type your response here..." disabled></textarea>
+            <button onclick="sendReply()" id="sendButton" disabled>Send as Wizard</button>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+        let currentSessionId = null;
+        let pollInterval = null;
+        let lastMessageCount = 0;
+
+        function connectToSession() {
+            const sessionId = document.getElementById('sessionIdInput').value.trim();
+            
+            if (!sessionId) {
+                alert('Please enter a session ID');
+                return;
+            }
+
+            currentSessionId = sessionId;
+            document.getElementById('statusText').textContent = `Connected to Session: ${sessionId}`;
+            document.getElementById('statusDot').classList.add('connected');
+            document.getElementById('replyText').disabled = false;
+            document.getElementById('sendButton').disabled = false;
+
+            // Start polling for messages
+            startPolling();
+            
+            // Load existing messages
+            loadMessages();
+        }
+
+        function startPolling() {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+            }
+            
+            pollInterval = setInterval(loadMessages, 2000); // Poll every 2 seconds
+        }
+
+        async function loadMessages() {
+            if (!currentSessionId) return;
+
+            try {
+                const response = await fetch(`${API_URL}/sessions/${currentSessionId}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    displayMessages(data.messages);
+                } else if (response.status === 404) {
+                    // Session doesn't exist yet
+                    document.getElementById('messagesContainer').innerHTML = `
+                        <div class="no-session">
+                            <p>Waiting for user to send first message...</p>
+                            <p>Session ID: ${currentSessionId}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading messages:', error);
+            }
+        }
+
+        function displayMessages(messages) {
+            if (messages.length === 0) {
+                document.getElementById('messagesContainer').innerHTML = `
+                    <div class="no-session">
+                        <p>No messages yet</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const container = document.getElementById('messagesContainer');
+            const shouldScroll = container.scrollHeight - container.scrollTop === container.clientHeight;
+            
+            container.innerHTML = '';
+            
+            messages.forEach(msg => {
+                const messageDiv = document.createElement('div');
+                // Handle both 'wizard' and 'Wizard' roles
+                const role = msg.role.toLowerCase();
+                messageDiv.className = `message ${role}`;
+                
+                const time = new Date(msg.timestamp).toLocaleTimeString();
+                const roleDisplay = role === 'user' ? 'User' : 'Wizard';
+                
+                messageDiv.innerHTML = `
+                    <div class="message-meta">${roleDisplay} - ${time}</div>
+                    <div class="message-text">${escapeHtml(msg.text)}</div>
+                `;
+                
+                container.appendChild(messageDiv);
+            });
+
+            if (shouldScroll || messages.length > lastMessageCount) {
+                container.scrollTop = container.scrollHeight;
+            }
+            
+            lastMessageCount = messages.length;
+        }
+
+        async function sendReply() {
+            const replyText = document.getElementById('replyText').value.trim();
+            
+            if (!replyText) {
+                alert('Please type a message');
+                return;
+            }
+
+            if (!currentSessionId) {
+                alert('Not connected to any session');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/message`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        session_id: currentSessionId,
+                        role: 'wizard',  // lowercase - matches app expectation
+                        text: replyText
+                    })
+                });
+
+                if (response.ok) {
+                    document.getElementById('replyText').value = '';
+                    loadMessages(); // Refresh messages immediately
+                    console.log('Message sent successfully');
+                } else {
+                    console.error('Failed to send message:', response.status);
+                    alert('Failed to send message');
+                }
+            } catch (error) {
+                console.error('Error sending reply:', error);
+                alert('Error sending message: ' + error.message);
+            }
+        }
+
+        function refreshMessages() {
+            loadMessages();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Allow Enter key to send message (Ctrl+Enter for new line)
+        document.getElementById('replyText').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.ctrlKey && !e.shiftKey) {
+                e.preventDefault();
+                sendReply();
+            }
+        });
+    </script>
+</body>
+</html>

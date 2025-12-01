@@ -1,0 +1,184 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Wizard Console</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; max-width: 960px; margin: 24px auto; padding: 0 12px; }
+  #top { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom: 10px; }
+  #chat { border: 1px solid #ddd; padding: 12px; height: 460px; overflow: auto; border-radius: 10px; background: #fafafa; display:flex; flex-direction:column; }
+  .msg { margin: 6px 0; padding: 8px 10px; border-radius: 10px; max-width: 80%; line-height: 1.35; }
+  .user { background: #e5e7eb; align-self: flex-end; }
+  .wizard { background: #2563eb; color: #fff; align-self: flex-start; }
+  .assistant { background: #16a34a; color: #fff; align-self: flex-start; opacity: .95; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  input, button, textarea { padding: 10px; border-radius: 10px; border: 1px solid #ddd; font: inherit; }
+  button { background: #2563eb; color: #fff; border: none; cursor: pointer; }
+  button.secondary { background: #6b7280; }
+  .stack { display:flex; flex-direction:column; gap:8px; }
+  .thin { font-weight: 400; color: #666; font-size: 14px; }
+  textarea { width: 100%; min-height: 84px; resize: vertical; }
+  .pill { padding: 4px 10px; border-radius: 999px; background: #eef2ff; color:#3730a3; }
+  small.hint { color:#666; }
+  #meta { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  code.badge { background:#eef2ff; color:#3730a3; padding:2px 6px; border-radius:6px; font-size:12px; }
+</style>
+
+<h2>Wizard Console <span class="thin">— smartphone WoZ</span></h2>
+
+<div id="top">
+  <label>Session ID:
+    <input id="sid" placeholder="e.g., senior-abc123" />
+  </label>
+  <button id="connect">Connect</button>
+  <button id="listBtn" class="secondary">List Sessions</button>
+  <button id="clear" class="secondary" title="Clear local view only">Clear</button>
+  <span id="status" class="pill">idle</span>
+</div>
+
+<div id="meta">
+  <small class="hint">API:</small> <code class="badge" id="apiBadge">http://localhost:8000</code>
+  <small class="hint">Tip: Enter to send, Shift+Enter for newline.</small>
+</div>
+
+<div id="sessionsList" style="display:none; background:#fff3cd; padding:10px; border-radius:10px; margin-bottom:10px;">
+  <strong>Active Sessions:</strong>
+  <div id="sessionsContent"></div>
+</div>
+
+<div id="chat" class="stack" aria-live="polite"></div>
+
+<div class="stack" style="margin-top:10px">
+  <label for="reply">Reply (editable):</label>
+  <textarea id="reply" placeholder="Type your answer…"></textarea>
+  <div class="row">
+    <button id="sendWizard">Send as Wizard</button>
+  </div>
+</div>
+
+<script>
+  const API = 'http://localhost:8000';
+  
+  const sid = document.getElementById("sid");
+  const chat = document.getElementById("chat");
+  const reply = document.getElementById("reply");
+  const connectBtn = document.getElementById("connect");
+  const listBtn = document.getElementById("listBtn");
+  const clearBtn = document.getElementById("clear");
+  const sendWizardBtn = document.getElementById("sendWizard");
+  const statusPill = document.getElementById("status");
+
+  let lastMessageCount = 0;
+  let timer = null;
+
+  function setStatus(text){ statusPill.textContent = text; }
+
+  function bubble(role, text){
+    const wrap = document.createElement("div");
+    wrap.className = "msg " + role;
+    wrap.style.alignSelf = role === "user" ? "flex-end" : "flex-start";
+
+    const who = document.createElement("div");
+    who.style.fontSize = "12px";
+    who.style.opacity = "0.8";
+    who.textContent = role + ":";
+    wrap.appendChild(who);
+
+    if (text && text.trim().length) {
+      const t = document.createElement("div");
+      t.textContent = text;
+      t.style.whiteSpace = "pre-wrap";
+      t.style.marginTop = "4px";
+      wrap.appendChild(t);
+    }
+
+    chat.appendChild(wrap);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  async function poll(){
+    try {
+      const session = sid.value.trim();
+      if (!session) return;
+      
+      const r = await fetch(`${API}/sessions/${encodeURIComponent(session)}`);
+      if (!r.ok) {
+        setStatus("session not found");
+        return;
+      }
+      
+      const data = await r.json();
+      const messages = data.messages || [];
+      
+      if (messages.length !== lastMessageCount) {
+        chat.innerHTML = "";
+        messages.forEach(m => bubble(m.role, m.text));
+        lastMessageCount = messages.length;
+      }
+      
+      setStatus("connected");
+    } catch (e) {
+      setStatus("error");
+    }
+  }
+
+  connectBtn.onclick = () => {
+    sid.value = sid.value.trim();
+    if (!sid.value) return;
+    if (timer) clearInterval(timer);
+    lastMessageCount = 0;
+    chat.innerHTML = "";
+    setStatus("connecting…");
+    timer = setInterval(poll, 1000);
+    poll();
+  };
+
+  listBtn.onclick = async () => {
+    try {
+      const r = await fetch(`${API}/sessions`);
+      const data = await r.json();
+      const list = document.getElementById('sessionsList');
+      const content = document.getElementById('sessionsContent');
+      
+      if (data.sessions.length === 0) {
+        content.innerHTML = '<p>No active sessions</p>';
+      } else {
+        content.innerHTML = data.sessions.map(s => 
+          `<div style="margin:5px 0;">
+            <button onclick="document.getElementById('sid').value='${s}'; document.getElementById('connect').click();" style="background:#4CAF50; padding:5px 10px; margin-right:5px;">Connect</button>
+            ${s}
+          </div>`
+        ).join('');
+      }
+      list.style.display = 'block';
+    } catch(e) {
+      alert('Error listing sessions');
+    }
+  };
+
+  clearBtn.onclick = () => {
+    chat.innerHTML = "";
+    lastMessageCount = 0;
+  };
+
+  async function send(role){
+    const session = sid.value.trim();
+    if (!session || !reply.value.trim()) return;
+    const text = reply.value.trim();
+    await fetch(`${API}/message`, {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ session_id: session, role, text })
+    });
+    reply.value = "";
+  }
+
+  sendWizardBtn.onclick = () => send("assistant");
+
+  reply.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      send("assistant");
+    }
+  });
+</script>
