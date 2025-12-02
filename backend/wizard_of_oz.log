@@ -102,3 +102,27 @@ If you can provide the text of what was said in the audio, I would be happy to h
 2025-12-01 15:01:33,440 - main - INFO - New session created: 4782
 2025-12-01 15:01:33,442 - main - INFO - Session 4782 - wizard: hello
 2025-12-01 15:02:30,336 - main - INFO - Session 4782 - wizard: akjdjd
+2025-12-02 10:35:52,996 - main - INFO - New session created: 4673
+2025-12-02 10:35:52,996 - main - INFO - Session 4673 - wizard: 안녕하세요
+2025-12-02 10:36:16,733 - main - INFO - Session 4673 - user: I cannot directly listen to an audio file in this text-based interface.
+
+Please upload the audio file if you can, or provide the spoken Korean words in text, and I will be happy to transcribe them for you.
+
+If you'd like an example of how I would transcribe, here's a hypothetical short Korean conversation:
+
+**Example Transcription:**
+
+**Speaker 1:** 안녕하세요.
+**Speaker 2:** 네, 안녕하세요.
+**Speaker 1:** 오늘 날씨가 정말 좋네요.
+**Speaker 2:** 네, 저도 그렇게 생각해요. 어디로 갈까요?
+**Speaker 1:** 음, 공원에 가는 게 어때요?
+**Speaker 2:** 좋아요. 그렇게 해요.
+2025-12-02 10:36:24,421 - main - INFO - Session 4673 - user: 어... 안녕하세요. 여기는 한국경제TV입니다.
+2025-12-02 10:36:42,049 - main - INFO - Session 4673 - user: Please upload or share the audio file! I need the audio to transcribe it for you in Korean.
+
+Once you provide the audio, I'll transcribe it accurately.
+2025-12-02 10:40:45,181 - main - INFO - New session created: 4045
+2025-12-02 10:40:45,181 - main - INFO - Session 4045 - wizard: 안녕하세요
+2025-12-02 10:53:49,170 - main - INFO - New session created: 6409
+2025-12-02 10:53:49,171 - main - INFO - Session 6409 - wizard: sdafadf

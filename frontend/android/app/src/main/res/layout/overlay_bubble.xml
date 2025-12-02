@@ -1,29 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="80dp"
-    android:layout_height="80dp"
+    android:layout_width="85dp"
+    android:layout_height="85dp"
     android:background="@drawable/bubble_background"
     android:elevation="8dp">
 
     <ImageView
-        android:layout_width="48dp"
-        android:layout_height="48dp"
+        android:layout_width="53dp"
+        android:layout_height="53dp"
         android:layout_gravity="center"
         android:src="@android:drawable/ic_dialog_info"
         android:tint="#FFFFFF" />
 
 </FrameLayout>
-
-<!-- <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:padding="10dp"
-    android:background="@drawable/bubble_bg"
-    android:gravity="center">
-
-    <ImageView
-        android:id="@+id/bubble_icon"
-        android:src="@android:drawable/ic_btn_speak_now"
-        android:layout_width="50dp"
-        android:layout_height="50dp"/>
-</LinearLayout> -->

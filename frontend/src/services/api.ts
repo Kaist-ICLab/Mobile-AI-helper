@@ -16,7 +16,7 @@ export interface LogRequest {
   event_data?: Record<string, any>;
 }
 
-const API_BASE_URL = 'http://172.20.60.72:8000';
+const API_BASE_URL = 'http://143.248.57.111:8000';
 
 export const sendMessage = async (
   sessionId: string,

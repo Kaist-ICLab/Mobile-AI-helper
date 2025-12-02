@@ -1,4 +1,4 @@
-package com.seniorhelper
+package com.mobileaihelper
 
 import android.app.Application
 

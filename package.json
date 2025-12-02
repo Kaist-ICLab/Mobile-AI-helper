@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@daily-co/react-native-daily-js": "^0.82.0",
+    "react-native-background-timer": "^2.4.1"
+  }
+}

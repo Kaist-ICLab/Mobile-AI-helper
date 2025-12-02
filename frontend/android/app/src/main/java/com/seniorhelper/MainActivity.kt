@@ -1,8 +1,11 @@
-package com.seniorhelper
+package com.mobileaihelper
 
 import android.Manifest
+import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.projection.MediaProjectionManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -18,6 +21,7 @@ class MainActivity : AppCompatActivity() {
     companion object {
         private const val OVERLAY_REQ_CODE = 1001
         private const val MICROPHONE_REQ_CODE = 1002
+        private const val SCREEN_CAPTURE_REQ_CODE = 1003
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -28,18 +32,7 @@ class MainActivity : AppCompatActivity() {
         val stopButton = findViewById<Button>(R.id.stopButton)
 
         startButton.setOnClickListener {
-            // Check all required permissions
-            when {
-                !canDrawOverApps() -> {
-                    requestOverlayPermission()
-                }
-                !hasMicrophonePermission() -> {
-                    requestMicrophonePermission()
-                }
-                else -> {
-                    startOverlayService()
-                }
-            }
+            startHelpFlow()
         }
 
         stopButton.setOnClickListener {
@@ -48,101 +41,72 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun canDrawOverApps(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            Settings.canDrawOverlays(this)
-        } else {
-            true
+    private fun startHelpFlow() {
+        // 1. Check Overlay
+        if (!canDrawOverApps()) {
+            requestOverlayPermission()
+            return
         }
-    }
-
-    private fun hasMicrophonePermission(): Boolean {
-        return ContextCompat.checkSelfPermission(
-            this,
-            Manifest.permission.RECORD_AUDIO
-        ) == PackageManager.PERMISSION_GRANTED
-    }
-
-    private fun requestOverlayPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val intent = Intent(
-                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                Uri.parse("package:$packageName")
-            )
-            Toast.makeText(
-                this,
-                "Please allow 'Appear on top' permission for Senior Helper",
-                Toast.LENGTH_LONG
-            ).show()
-            startActivityForResult(intent, OVERLAY_REQ_CODE)
+        // 2. Check Mic
+        if (!hasMicrophonePermission()) {
+            requestMicrophonePermission()
+            return
         }
+        // 3. Request Screen Capture (Required for Daily Native)
+        requestScreenCapture()
     }
 
-    private fun requestMicrophonePermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.RECORD_AUDIO),
-                MICROPHONE_REQ_CODE
-            )
+    // --- Permissions Logic ---
+
+    private fun requestScreenCapture() {
+        val mediaProjectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+        // This opens the system dialog "Start recording or casting...?"
+        startActivityForResult(mediaProjectionManager.createScreenCaptureIntent(), SCREEN_CAPTURE_REQ_CODE)
+    }
+
+    private fun startOverlayService(resultCode: Int, data: Intent) {
+        val serviceIntent = Intent(this, OverlayService::class.java).apply {
+            action = "START_SESSION"
+            // Pass the screen capture permission to the service
+            putExtra("RESULT_CODE", resultCode)
+            putExtra("DATA", data)
         }
-    }
 
-    private fun startOverlayService() {
-        val serviceIntent = Intent(this, OverlayService::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForegroundService(serviceIntent)
         } else {
             startService(serviceIntent)
         }
-        Toast.makeText(this, "Help Started - Click the green bubble!", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "Starting Help...", Toast.LENGTH_SHORT).show()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == OVERLAY_REQ_CODE) {
-            if (canDrawOverApps()) {
-                // Now check microphone permission
-                if (hasMicrophonePermission()) {
-                    startOverlayService()
+        when (requestCode) {
+            OVERLAY_REQ_CODE -> startHelpFlow() // Retry flow
+            SCREEN_CAPTURE_REQ_CODE -> {
+                if (resultCode == Activity.RESULT_OK && data != null) {
+                    // Success! Start the Service with the permission data
+                    startOverlayService(resultCode, data)
                 } else {
-                    requestMicrophonePermission()
+                    Toast.makeText(this, "Screen sharing is required.", Toast.LENGTH_SHORT).show()
                 }
-            } else {
-                Toast.makeText(
-                    this,
-                    "Overlay permission is required to show the floating button.",
-                    Toast.LENGTH_LONG
-                ).show()
             }
         }
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        
-        when (requestCode) {
-            MICROPHONE_REQ_CODE -> {
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Toast.makeText(this, "Microphone permission granted!", Toast.LENGTH_SHORT).show()
-                    // Now check if we can start the service
-                    if (canDrawOverApps()) {
-                        startOverlayService()
-                    } else {
-                        requestOverlayPermission()
-                    }
-                } else {
-                    Toast.makeText(
-                        this,
-                        "Microphone permission is needed for voice input",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            }
+    // --- Boilerplate Permission Checks ---
+    private fun canDrawOverApps(): Boolean = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) Settings.canDrawOverlays(this) else true
+    private fun requestOverlayPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
+            startActivityForResult(intent, OVERLAY_REQ_CODE)
         }
+    }
+    private fun hasMicrophonePermission() = ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+    private fun requestMicrophonePermission() = ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), MICROPHONE_REQ_CODE)
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == MICROPHONE_REQ_CODE && grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) startHelpFlow()
     }
 }

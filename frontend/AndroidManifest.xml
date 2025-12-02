@@ -32,5 +32,10 @@
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="microphone" />
+
+        <service
+            android:name="com.daily.reactlibrary.DailyOngoingMeetingForegroundService"
+            android:foregroundServiceType="mediaProjection"
+            android:exported="false" />
     </application>
 </manifest>
