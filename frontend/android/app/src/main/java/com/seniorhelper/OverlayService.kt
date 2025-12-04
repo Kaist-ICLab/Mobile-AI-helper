@@ -49,14 +49,15 @@ import java.util.Base64
 import kotlin.random.Random
 import co.daily.CallClient
 import co.daily.CallClientListener
+import com.mobileaihelper.BuildConfig
+
 
 class OverlayService : Service() {
 
     // ==================== CONFIGURATION ====================
     // CLOVA KEYS
-    private val CLOVA_ID = "84x59kteir"
-    private val CLOVA_SECRET = "lrXfKaV7HiqK79GyFQ0IA1D6USlYWFJ6ooZbPh0a"
-
+    private val CLOVA_ID = BuildConfig.CLOVA_ID
+    private val CLOVA_SECRET = BuildConfig.CLOVA_SECRET
     private val TTS_VOICE = "nara"
 
     // SERVER URLS

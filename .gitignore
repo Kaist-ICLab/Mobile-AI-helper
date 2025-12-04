@@ -11,3 +11,5 @@ build/
 # OS / editor
 .DS_Store
 .vscode/
+
+local.properties

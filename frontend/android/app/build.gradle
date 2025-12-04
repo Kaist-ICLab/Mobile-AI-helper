@@ -5,6 +5,12 @@ android {
     namespace "com.mobileaihelper"
     compileSdkVersion 34
     buildToolsVersion "34.0.0"
+    
+    def localProperties = new Properties()
+    def localPropertiesFile = rootProject.file('local.properties')
+    if (localPropertiesFile.exists()) {
+        localProperties.load(new FileInputStream(localPropertiesFile))
+    }
 
     defaultConfig {
         applicationId "com.mobileaihelper"
@@ -12,6 +18,15 @@ android {
         targetSdkVersion 34
         versionCode 1
         versionName "1.0"
+
+        // Create Build Config Fields 
+        buildConfigField "String", "CLOVA_ID", localProperties['clova.id']
+        buildConfigField "String", "CLOVA_SECRET", localProperties['clova.secret']
+    }
+
+    // Enable BuildConfig generation
+    buildFeatures {
+        buildConfig = true
     }
 
     signingConfigs {
