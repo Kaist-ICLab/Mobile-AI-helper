@@ -1,10 +1,11 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict, Optional
 import logging
 from datetime import datetime
-import uuid
+from frequent_response_routes import router as frequent_response_router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -26,6 +27,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.include_router(frequent_response_router)
 
 sessions: Dict[str, list] = {}
 
@@ -48,6 +50,29 @@ class LogRequest(BaseModel):
 class LogResponse(BaseModel):
     status: str
     logged_at: str
+
+
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: Dict[str, WebSocket] = {}
+
+    async def connect(self, websocket: WebSocket, client_id: str):
+        await websocket.accept()
+        self.active_connections[client_id] = websocket
+
+    def disconnect(self, client_id: str):
+        if client_id in self.active_connections:
+            del self.active_connections[client_id]
+
+    async def send_personal_message(self, message: str, websocket: WebSocket):
+        await websocket.send_text(message)
+
+    async def broadcast_bytes(self, data: bytes, target_id: str):
+        # Relay data from Phone (source) to Wizard (target)
+        if target_id in self.active_connections:
+            await self.active_connections[target_id].send_bytes(data)
+
+manager = ConnectionManager()
 
 @app.get("/")
 async def root():
@@ -134,6 +159,32 @@ async def list_sessions():
         "sessions": list(sessions.keys()),
         "count": len(sessions)
     }
+
+@app.get("/wizard", response_class=HTMLResponse)
+async def get_wizard_interface():
+    with open("wizard_interface.html", "r") as f:
+        return f.read()
+
+@app.websocket("/ws/phone/{session_id}")
+async def websocket_phone(websocket: WebSocket, session_id: str):
+    await manager.connect(websocket, f"phone_{session_id}")
+    try:
+        while True:
+            # Receive image bytes from phone
+            data = await websocket.receive_bytes()
+            # Forward immediately to the wizard of this session
+            await manager.broadcast_bytes(data, f"wizard_{session_id}")
+    except WebSocketDisconnect:
+        manager.disconnect(f"phone_{session_id}")
+
+@app.websocket("/ws/wizard/{session_id}")
+async def websocket_wizard(websocket: WebSocket, session_id: str):
+    await manager.connect(websocket, f"wizard_{session_id}")
+    try:
+        while True:
+            await websocket.receive_text() # Keep connection alive
+    except WebSocketDisconnect:
+        manager.disconnect(f"wizard_{session_id}")
 
 if __name__ == "__main__":
     import uvicorn

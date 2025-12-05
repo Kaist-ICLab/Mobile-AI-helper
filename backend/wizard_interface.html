@@ -13,335 +13,660 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f5f5;
-            padding: 20px;
+            background: #2c3e50; /* Darker background for focus */
+            padding: 10px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-
+        /* Top Header Bar */
         .header {
             background: #4CAF50;
             color: white;
-            padding: 20px;
-        }
-
-        .header h1 {
-            margin-bottom: 10px;
-        }
-
-        .session-input {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .session-input input {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-        }
-
-        .session-input button {
             padding: 10px 20px;
-            background: white;
-            color: #4CAF50;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .session-input button:hover {
-            background: #f0f0f0;
-        }
-
-        .status {
-            padding: 15px 20px;
-            background: #f9f9f9;
-            border-bottom: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .status-indicator {
+        .header h1 {
+            font-size: 20px;
+        }
+
+        .session-controls {
             display: flex;
-            align-items: center;
             gap: 10px;
         }
 
+        .session-controls input {
+            padding: 8px;
+            border: none;
+            border-radius: 4px;
+        }
+
+        .session-controls button {
+            padding: 8px 15px;
+            background: #2E7D32;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* MAIN LAYOUT - SPLIT SCREEN */
+        .main-layout {
+            display: flex;
+            gap: 15px;
+            flex: 1; /* Takes remaining height */
+            height: 0; /* Important for scroll to work inside flex items */
+        }
+
+        /* LEFT COLUMN: LIVE SCREEN */
+        .screen-column {
+            flex: 6; /* Takes 70% of space */
+            background: black;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+            border: 2px solid #333;
+        }
+
+        .screen-column h3 {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: rgba(255, 255, 255, 0.5);
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border-radius: 4px;
+            z-index: 10;
+        }
+
+        #screenStream {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain; /* Ensures the whole phone screen is visible */
+        }
+
+        /* RIGHT COLUMN: CHAT CONSOLE */
+        .chat-column {
+            flex: 2; /* Takes 20% of space */
+            background: white;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .frequent-responses-column {
+            flex: 2; /* Takes 20% of space */
+            background: white;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 15px;
+        }
+
+        .frequent-responses-column h3 {
+            margin: 0 0 15px 0;
+            padding: 10px;
+            background: #f0f2f5;
+            border-radius: 8px;
+            font-size: 16px;
+            color: #333;
+            text-align: center;
+        }
+
+        .frequent-responses-column button {
+            padding: 10px 15px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 15px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .frequent-responses-column button:hover {
+            background: #45a049;
+        }
+
+        #responsesContainer {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 5px;
+        }
+
+        .frequent-response {
+            padding: 12px;
+            background: #E8F5E9;
+            border: 1px solid #C8E6C9;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .frequent-response-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .frequent-response .delete-btn {
+            padding: 4px 8px;
+            background: #e57373;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+        .frequent-response .delete-btn:hover { background: #d32f2f; }
+
+        .frequent-response:hover {
+            background: #C8E6C9;
+            border-color: #4CAF50;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .frequent-responses-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .frequent-responses-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .classification-filter {
+            margin-bottom: 10px;
+        }
+        .classification-filter select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .add-response-btn {
+            padding: 6px 10px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .add-response-btn:hover { background: #45a049; }
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 320px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .modal textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            resize: vertical;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .modal button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .modal .save-btn { background: #4CAF50; color: white; }
+        .modal .cancel-btn { background: #e0e0e0; color: #333; }
+
+        .frequent-response-content {
+            font-size: 14px;
+            color: #2E7D32;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .status {
+            padding: 10px;
+            background: #f9f9f9;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+        }
+
         .status-dot {
-            width: 12px;
-            height: 12px;
+            display: inline-block;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
             background: #ccc;
+            margin-right: 5px;
         }
-
-        .status-dot.connected {
-            background: #4CAF50;
-        }
+        .status-dot.connected { background: #4CAF50; }
 
         .messages {
-            height: 400px;
+            flex: 1; /* Takes all available vertical space */
             overflow-y: auto;
-            padding: 20px;
-            background: #fafafa;
+            padding: 15px;
+            background: #f0f2f5;
         }
 
         .message {
-            margin-bottom: 15px;
-            padding: 12px 15px;
+            margin-bottom: 10px;
+            padding: 10px;
             border-radius: 8px;
-            max-width: 80%;
+            max-width: 85%;
+            font-size: 14px;
         }
-
-        .message.user {
-            background: #E3F2FD;
-            margin-left: auto;
-            text-align: right;
-        }
-
-        .message.wizard {
-            background: #C8E6C9;
-        }
-
-        .message-meta {
-            font-size: 11px;
-            color: #666;
-            margin-bottom: 5px;
-        }
-
-        .message-text {
-            font-size: 15px;
-            line-height: 1.4;
-        }
+        .message.user { background: #E3F2FD; margin-left: auto; text-align: right; }
+        .message.wizard { background: #C8E6C9; }
+        .message-meta { font-size: 10px; color: #666; margin-bottom: 3px; }
 
         .input-area {
-            padding: 20px;
+            padding: 15px;
             background: white;
             border-top: 1px solid #ddd;
         }
 
         .input-area textarea {
             width: 100%;
-            padding: 12px;
+            padding: 10px;
             border: 1px solid #ddd;
             border-radius: 5px;
-            resize: vertical;
-            min-height: 80px;
-            font-size: 14px;
-            font-family: inherit;
+            resize: none;
+            height: 80px;
+            margin-bottom: 10px;
         }
 
         .input-area button {
-            margin-top: 10px;
-            padding: 12px 30px;
+            width: 100%;
+            padding: 12px;
             background: #4CAF50;
             color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             font-size: 16px;
-            font-weight: bold;
         }
+        .input-area button:hover { background: #45a049; }
+        .input-area button:disabled { background: #ccc; cursor: not-allowed; }
 
-        .input-area button:hover {
-            background: #45a049;
-        }
-
-        .input-area button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-
-        .no-session {
-            text-align: center;
-            padding: 40px;
-            color: #666;
-        }
     </style>
+    <script crossorigin src="https://unpkg.com/@daily-co/daily-js"></script>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🧙‍♂️ Wizard Console</h1>
-            <p>Mobile AI Helper - Wizard of Oz Interface</p>
-            <div class="session-input">
-                <input type="text" id="sessionIdInput" placeholder="Enter Session ID (e.g., 1234)" maxlength="4">
-                <button onclick="connectToSession()">Connect</button>
-            </div>
+
+    <div class="header">
+        <h1>🧙‍♂️ Wizard Console</h1>
+        <div class="session-controls">
+            <input type="text" id="sessionIdInput" placeholder="Session ID" maxlength="4" style="width: 100px;">
+            <button onclick="connectToSession()">Connect</button>
+        </div>
+    </div>
+
+    <div class="main-layout">
+        
+        <div class="screen-column">
+            <h3>📱 Live Screen</h3>
+            <img id="screenStream" alt="Waiting for connection..." src="" />
         </div>
 
-        <div class="status">
-            <div class="status-indicator">
-                <div class="status-dot" id="statusDot"></div>
-                <span id="statusText">Not Connected</span>
+        <div class="chat-column">
+            <div class="status">
+                <span><span class="status-dot" id="statusDot"></span><span id="statusText">Disconnected</span></span>
+                <button onclick="refreshMessages()" style="border:none; background:none; color:blue; cursor:pointer;">Refresh</button>
             </div>
-            <div>
-                <button onclick="refreshMessages()" style="padding: 5px 15px; border: 1px solid #ddd; background: white; border-radius: 3px; cursor: pointer;">Refresh</button>
+
+            <div class="messages" id="messagesContainer">
+                <div style="text-align:center; color:#999; margin-top:50px;">
+                    Enter ID and Connect
+                </div>
+            </div>
+
+            <div class="input-area">
+                <textarea id="replyText" placeholder="Type response..." disabled></textarea>
+                <button onclick="sendReply()" id="sendButton" disabled>Send</button>
             </div>
         </div>
-
-        <div class="messages" id="messagesContainer">
-            <div class="no-session">
-                <p>👆 Enter a Session ID to start</p>
+        <div class="frequent-responses-column">
+            <div class="frequent-responses-header">
+                <h3> Frequent Responses</h3>
+                <div class="frequent-responses-actions">
+                    <button class="add-response-btn" onclick="openAddResponseModal()">+ 추가</button>
+                    <button class="add-response-btn" style="background:#2E7D32;" onclick="openAddClassificationModal()">분류 추가</button>
+                </div>
             </div>
+            <div class="classification-filter">
+                <select id="classificationFilter" onchange="filterFrequentResponses()">
+                    <option value="">전체</option>
+                </select>
+            </div>
+            <div id="responsesContainer">
+
+            </div>
+            <button onclick="loadFrequentResponses()">Load Frequent Responses</button>
         </div>
 
-        <div class="input-area">
-            <textarea id="replyText" placeholder="Type your response here..." disabled></textarea>
-            <button onclick="sendReply()" id="sendButton" disabled>Send as Wizard</button>
+    </div>
+
+    <div id="addResponseBackdrop" class="modal-backdrop">
+        <div class="modal">
+            <h4>자주 쓰는 응답 추가</h4>
+            <select id="newResponseClassification" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 10px;">
+                <option value="">분류 선택</option>
+            </select>
+            <textarea id="newResponseContent" placeholder="응답 내용을 입력하세요"></textarea>
+            <div class="modal-actions">
+                <button class="cancel-btn" onclick="closeAddResponseModal()">취소</button>
+                <button class="save-btn" onclick="saveFrequentResponse()">저장</button>
+            </div>
         </div>
     </div>
 
     <script>
-        const API_URL = '';
+        // --- JAVASCRIPT LOGIC (Unchanged functionality, just adapted for new layout) ---
+        
+        const API_URL = ''; // Use current domain
         let currentSessionId = null;
         let pollInterval = null;
         let lastMessageCount = 0;
+        let frequentResponses = [];
+        let taskClassifications = [];
+        let selectedClassification = '';
+        const addResponseBackdrop = document.getElementById('addResponseBackdrop');
+        const newResponseContent = document.getElementById('newResponseContent');
 
         function connectToSession() {
             const sessionId = document.getElementById('sessionIdInput').value.trim();
-            
-            if (!sessionId) {
-                alert('Please enter a session ID');
-                return;
-            }
+            if (!sessionId) { alert('Enter Session ID'); return; }
 
             currentSessionId = sessionId;
-            document.getElementById('statusText').textContent = `Connected to Session: ${sessionId}`;
+            document.getElementById('statusText').textContent = `Session: ${sessionId}`;
             document.getElementById('statusDot').classList.add('connected');
             document.getElementById('replyText').disabled = false;
             document.getElementById('sendButton').disabled = false;
-
-            // Start polling for messages
-            startPolling();
             
-            // Load existing messages
+            // --- DAILY.CO VIDEO EMBED ---
+            const screenColumn = document.querySelector('.screen-column');
+            
+            // Clear previous elements (like the h3 tag or old images)
+            screenColumn.innerHTML = ''; 
+
+            // Initialize the Daily Iframe
+            const roomUrl = `https://mobile-woz.daily.co/woz-test`; 
+
+            callFrame = window.DailyIframe.createFrame(screenColumn, {
+                iframeStyle: {
+                    width: '100%',
+                    height: '100%',
+                    border: '0',
+                    borderRadius: '10px'
+                },
+                showLeaveButton: true,
+                showFullscreenButton: true
+            });
+
+            callFrame.join({ url: roomUrl });
+
+            // --- CHAT POLLING ---
+            startPolling();
             loadMessages();
         }
 
         function startPolling() {
-            if (pollInterval) {
-                clearInterval(pollInterval);
-            }
-            
-            pollInterval = setInterval(loadMessages, 2000); // Poll every 2 seconds
+            if (pollInterval) clearInterval(pollInterval);
+            pollInterval = setInterval(loadMessages, 2000);
         }
 
         async function loadMessages() {
             if (!currentSessionId) return;
-
             try {
                 const response = await fetch(`${API_URL}/sessions/${currentSessionId}`);
-                
                 if (response.ok) {
                     const data = await response.json();
                     displayMessages(data.messages);
-                } else if (response.status === 404) {
-                    // Session doesn't exist yet
-                    document.getElementById('messagesContainer').innerHTML = `
-                        <div class="no-session">
-                            <p>Waiting for user to send first message...</p>
-                            <p>Session ID: ${currentSessionId}</p>
-                        </div>
-                    `;
                 }
-            } catch (error) {
-                console.error('Error loading messages:', error);
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadTaskClassifications() {
+            try {
+                const response = await fetch(`${API_URL}/frequentResponse/taskClassifications`);
+                if (response.ok) {
+                    taskClassifications = await response.json();
+                    populateClassificationDropdowns();
+                }
+            } catch (e) {
+                console.error('Error loading task classifications:', e);
+            }
+        }
+
+        async function openAddClassificationModal() {
+            const name = (prompt('새 분류 이름을 입력하세요') || '').trim();
+            if (!name) return;
+            try {
+                const response = await fetch(`${API_URL}/frequentResponse/taskClassifications`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name })
+                });
+                if (!response.ok) {
+                    throw new Error(`Server responded with status ${response.status}`);
+                }
+                await loadTaskClassifications();
+            } catch (e) {
+                console.error(e);
+                alert('분류 추가 중 오류가 발생했습니다.');
+            }
+        }
+
+        function populateClassificationDropdowns() {
+            const filterSelect = document.getElementById('classificationFilter');
+            const modalSelect = document.getElementById('newResponseClassification');
+            
+            // Clear existing options except first one
+            filterSelect.innerHTML = '<option value="">전체</option>';
+            modalSelect.innerHTML = '<option value="">분류 선택</option>';
+            
+            taskClassifications.forEach(classification => {
+                const filterOption = document.createElement('option');
+                filterOption.value = classification.name;
+                filterOption.textContent = classification.name;
+                filterSelect.appendChild(filterOption);
+                
+                const modalOption = document.createElement('option');
+                modalOption.value = classification.name;
+                modalOption.textContent = classification.name;
+                modalSelect.appendChild(modalOption);
+            });
+        }
+
+        function filterFrequentResponses() {
+            selectedClassification = document.getElementById('classificationFilter').value;
+            displayFrequentResponses();
+        }
+
+        function openAddResponseModal() {
+            newResponseContent.value = '';
+            document.getElementById('newResponseClassification').value = '';
+            addResponseBackdrop.style.display = 'flex';
+            newResponseContent.focus();
+        }
+
+        function closeAddResponseModal() {
+            addResponseBackdrop.style.display = 'none';
+        }
+
+        async function saveFrequentResponse() {
+            const content = newResponseContent.value.trim();
+            const taskClassification = document.getElementById('newResponseClassification').value.trim();
+            
+            if (!content) { alert('내용을 입력하세요'); return; }
+            if (!taskClassification) { alert('분류를 선택하세요'); return; }
+
+            try {
+                const response = await fetch(`${API_URL}/frequentResponse`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        content,
+                        taskClassification 
+                    })
+                });
+                if (!response.ok) {
+                    throw new Error(`Server responded with status ${response.status}`);
+                }
+                await loadFrequentResponses();
+                closeAddResponseModal();
+            } catch (e) {
+                console.error(e);
+                alert('저장 중 오류가 발생했습니다.');
+            }
+        }
+
+        
+        function fillText(text) {
+            const replyText = document.getElementById('replyText');
+            replyText.value = text;
+            replyText.focus();
+            console.log("fillText", text);
+        }
+        async function loadFrequentResponses() {
+            try {
+                const response = await fetch(`${API_URL}/frequentResponse`);
+                if (response.ok) {
+                    const data = await response.json();
+                    frequentResponses = data;
+                }
+            } catch (e) { 
+                console.error(e); 
+            }
+            displayFrequentResponses();
+        }
+
+        function displayFrequentResponses() {
+            const frequentResponsesContainer = document.getElementById('responsesContainer');
+            frequentResponsesContainer.innerHTML = '';
+            
+            // Filter responses based on selected classification
+            const filteredResponses = selectedClassification 
+                ? frequentResponses.filter(r => r.taskClassification === selectedClassification)
+                : frequentResponses;
+            
+            filteredResponses.forEach(response => {
+                const div = document.createElement('div');
+                div.className = 'frequent-response';
+                const row = document.createElement('div');
+                row.className = 'frequent-response-row';
+
+                const content = document.createElement('div');
+                content.className = 'frequent-response-content';
+                content.textContent = response.content;
+                div.addEventListener('click', () => fillText(response.content));
+
+                const delBtn = document.createElement('button');
+                delBtn.className = 'delete-btn';
+                delBtn.textContent = '삭제';
+                delBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deleteFrequentResponse(response.id);
+                });
+
+                row.appendChild(content);
+                row.appendChild(delBtn);
+                div.appendChild(row);
+                frequentResponsesContainer.appendChild(div);
+            });
+        }
+
+        async function deleteFrequentResponse(id) {
+            if (!confirm('정말 삭제하시겠습니까?')) return;
+            try {
+                const response = await fetch(`${API_URL}/frequentResponse/${id}`, {
+                    method: 'DELETE'
+                });
+                if (!response.ok) {
+                    throw new Error(`Server responded with status ${response.status}`);
+                }
+                await loadFrequentResponses();
+            } catch (e) {
+                console.error(e);
+                alert('삭제 중 오류가 발생했습니다.');
             }
         }
 
         function displayMessages(messages) {
-            if (messages.length === 0) {
-                document.getElementById('messagesContainer').innerHTML = `
-                    <div class="no-session">
-                        <p>No messages yet</p>
-                    </div>
-                `;
-                return;
-            }
-
             const container = document.getElementById('messagesContainer');
-            const shouldScroll = container.scrollHeight - container.scrollTop === container.clientHeight;
+            // Auto-scroll only if already at bottom or new connection
+            const shouldScroll = container.scrollHeight - container.scrollTop === container.clientHeight || lastMessageCount === 0;
             
             container.innerHTML = '';
-            
             messages.forEach(msg => {
-                const messageDiv = document.createElement('div');
-                // Handle both 'wizard' and 'Wizard' roles
-                const role = msg.role.toLowerCase();
-                messageDiv.className = `message ${role}`;
-                
-                const time = new Date(msg.timestamp).toLocaleTimeString();
-                const roleDisplay = role === 'user' ? 'User' : 'Wizard';
-                
-                messageDiv.innerHTML = `
-                    <div class="message-meta">${roleDisplay} - ${time}</div>
-                    <div class="message-text">${escapeHtml(msg.text)}</div>
-                `;
-                
-                container.appendChild(messageDiv);
+                const div = document.createElement('div');
+                div.className = `message ${msg.role.toLowerCase()}`;
+                div.innerHTML = `<div class="message-meta">${msg.role}</div>${escapeHtml(msg.text)}`;
+                container.appendChild(div);
             });
 
-            if (shouldScroll || messages.length > lastMessageCount) {
-                container.scrollTop = container.scrollHeight;
-            }
-            
+            if (shouldScroll) container.scrollTop = container.scrollHeight;
             lastMessageCount = messages.length;
         }
 
         async function sendReply() {
-            const replyText = document.getElementById('replyText').value.trim();
-            
-            if (!replyText) {
-                alert('Please type a message');
-                return;
-            }
-
-            if (!currentSessionId) {
-                alert('Not connected to any session');
-                return;
-            }
+            const text = document.getElementById('replyText').value.trim();
+            if (!text || !currentSessionId) return;
 
             try {
-                const response = await fetch(`${API_URL}/message`, {
+                await fetch(`${API_URL}/message`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
                         session_id: currentSessionId,
-                        role: 'wizard',  // lowercase - matches app expectation
-                        text: replyText
+                        role: 'wizard',
+                        text: text
                     })
                 });
-
-                if (response.ok) {
-                    document.getElementById('replyText').value = '';
-                    loadMessages(); // Refresh messages immediately
-                    console.log('Message sent successfully');
-                } else {
-                    console.error('Failed to send message:', response.status);
-                    alert('Failed to send message');
-                }
-            } catch (error) {
-                console.error('Error sending reply:', error);
-                alert('Error sending message: ' + error.message);
-            }
-        }
-
-        function refreshMessages() {
-            loadMessages();
+                document.getElementById('replyText').value = '';
+                loadMessages();
+            } catch (e) { alert('Error sending: ' + e); }
         }
 
         function escapeHtml(text) {
@@ -350,13 +675,19 @@
             return div.innerHTML;
         }
 
-        // Allow Enter key to send message (Ctrl+Enter for new line)
+        // Enter to send
         document.getElementById('replyText').addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && !e.ctrlKey && !e.shiftKey) {
                 e.preventDefault();
                 sendReply();
             }
         });
+        
+        // Initialize on page load
+        (async function() {
+            await loadTaskClassifications();
+            await loadFrequentResponses();
+        })();
     </script>
 </body>
 </html>
