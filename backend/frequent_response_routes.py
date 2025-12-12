@@ -36,7 +36,7 @@ def get_default_task_classifications() -> List[Dict[str, str]]:
     return [
         {
             "id": str(uuid.uuid4()),
-            "name": "Open Naver"
+            "name": "Open Naver",
         }
     ]
 
@@ -76,7 +76,8 @@ def get_default_responses() -> List[Dict[str, str]]:
         {
             "id": str(uuid.uuid4()),
             "taskClassification": "Open Naver",
-            "content": "안녕하세요! 무엇을 도와드릴까요?"
+            "content": "안녕하세요! 무엇을 도와드릴까요?",
+            "order": 1
         },
     ]
 
@@ -100,12 +101,19 @@ class FrequentResponse(BaseModel):
     id: str
     taskClassification: str
     content: str
+    order: int
 
 
 class FrequentResponseCreate(BaseModel):
     taskClassification: str
     content: str
+    order : int | None = None
 
+def find_frequent_response(id: str) -> Dict[str, str]:
+    for item in frequent_responses:
+        if item["id"] == id:
+            return item
+    return None
 
 @router.get("", response_model=List[FrequentResponse])
 async def list_frequent_responses():
@@ -114,10 +122,16 @@ async def list_frequent_responses():
 
 @router.post("", response_model=FrequentResponse, status_code=201)
 async def add_frequent_response(request: FrequentResponseCreate):
+    sameTaskResponse = [r for r in frequent_responses if r["taskClassification"] == request.taskClassification];
+    if request.order != None:
+        for response in sameTaskResponse:
+            if response["order"] >= request.order:
+                response["order"] += 1;
     new_item = {
         "id": str(uuid.uuid4()),
         "taskClassification": request.taskClassification,
-        "content": request.content
+        "content": request.content,
+        "order": request.order if request.order else len(sameTaskResponse)
     }
     frequent_responses.append(new_item)
     save_responses(frequent_responses)
@@ -127,14 +141,32 @@ async def add_frequent_response(request: FrequentResponseCreate):
 
 @router.put("/{response_id}", response_model=FrequentResponse)
 async def update_frequent_response(response_id: str, request: FrequentResponseCreate):
-    for item in frequent_responses:
-        if item["id"] == response_id:
-            item["taskClassification"] = request.taskClassification
-            item["content"] = request.content
-            save_responses(frequent_responses)
-            logger.info(f"Frequent response updated: {item}")
-            return item
-    raise HTTPException(status_code=404, detail="Frequent response not found")
+    print("update_frequent_response", response_id, request)
+    targetItem = find_frequent_response(response_id);
+    print("targetItem", targetItem)
+    if not targetItem:
+        raise HTTPException(status_code=404, detail="Frequent response not found");
+
+    if request.order != None:
+        print("request.order", request.order)
+        previousOrder = targetItem["order"]
+        currentOrder = request.order
+        print("change status", previousOrder, currentOrder)
+        if previousOrder > currentOrder:
+            for response in frequent_responses:
+                if response["order"] < previousOrder and response["order"] >= currentOrder:
+                    response["order"] += 1;
+        elif previousOrder < currentOrder:
+            for response in frequent_responses:
+                if response["order"] > previousOrder and response["order"] <= currentOrder:
+                    response["order"] -= 1;
+
+    targetItem["taskClassification"] = request.taskClassification
+    targetItem["content"] = request.content
+    targetItem["order"] = request.order if request.order != None else targetItem["order"]
+    save_responses(frequent_responses)
+    logger.info(f"Frequent response updated: {targetItem}")
+    return targetItem
 
 
 @router.delete("/{response_id}")
@@ -142,6 +174,8 @@ async def delete_frequent_response(response_id: str):
     for idx, item in enumerate(frequent_responses):
         if item["id"] == response_id:
             frequent_responses.pop(idx)
+            for i in range(idx, len(frequent_responses)):
+                frequent_responses[i]["order"] -= 1
             save_responses(frequent_responses)
             logger.info(f"Frequent response deleted: {response_id}")
             return {"status": "deleted", "id": response_id}

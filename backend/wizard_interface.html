@@ -165,6 +165,12 @@
             justify-content: space-between;
             gap: 8px;
         }
+        .frequent-response-buttons {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-shrink: 0;
+        }
         .frequent-response .delete-btn {
             padding: 4px 8px;
             background: #e57373;
@@ -176,6 +182,27 @@
             flex-shrink: 0;
         }
         .frequent-response .delete-btn:hover { background: #d32f2f; }
+        .frequent-response .order-btn {
+            padding: 4px 8px;
+            background: #64B5F6;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+        }
+        .frequent-response .order-btn:hover { background: #1976D2; }
+        .frequent-response .order-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
 
         .frequent-response:hover {
             background: #C8E6C9;
@@ -591,7 +618,11 @@
                 ? frequentResponses.filter(r => r.taskClassification === selectedClassification)
                 : frequentResponses;
             
-            filteredResponses.forEach(response => {
+            const sortedResponses = filteredResponses.sort((a, b) => a.order - b.order);
+            const minOrder = sortedResponses.length > 0 ? Math.min(...sortedResponses.map(r => r.order)) : 0;
+            const maxOrder = sortedResponses.length > 0 ? Math.max(...sortedResponses.map(r => r.order)) : 0;
+            
+            sortedResponses.forEach((response, index) => {
                 const div = document.createElement('div');
                 div.className = 'frequent-response';
                 const row = document.createElement('div');
@@ -602,6 +633,37 @@
                 content.textContent = response.content;
                 div.addEventListener('click', () => fillText(response.content));
 
+                const buttonsContainer = document.createElement('div');
+                buttonsContainer.className = 'frequent-response-buttons';
+
+                const orderButtons = document.createElement('div');
+                orderButtons.style.display = 'flex';
+                orderButtons.style.gap = '4px';
+                orderButtons.style.flexShrink = '0';
+
+                const upBtn = document.createElement('button');
+                upBtn.className = 'order-btn';
+                upBtn.innerHTML = '↑';
+                upBtn.title = '위로 이동';
+                upBtn.disabled = response.order === minOrder;
+                upBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    changeOrderUp(response.id);
+                });
+
+                const downBtn = document.createElement('button');
+                downBtn.className = 'order-btn';
+                downBtn.innerHTML = '↓';
+                downBtn.title = '아래로 이동';
+                downBtn.disabled = response.order === maxOrder;
+                downBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    changeOrderDown(response.id);
+                });
+
+                orderButtons.appendChild(upBtn);
+                orderButtons.appendChild(downBtn);
+
                 const delBtn = document.createElement('button');
                 delBtn.className = 'delete-btn';
                 delBtn.textContent = '삭제';
@@ -610,13 +672,54 @@
                     deleteFrequentResponse(response.id);
                 });
 
+                buttonsContainer.appendChild(delBtn);
+                buttonsContainer.appendChild(orderButtons);
+
                 row.appendChild(content);
-                row.appendChild(delBtn);
+                row.appendChild(buttonsContainer);
                 div.appendChild(row);
                 frequentResponsesContainer.appendChild(div);
             });
         }
+        async function changeOrderUp(id) {
+            targetResponse = frequentResponses.find(r => r.id === id);
+            if (!targetResponse) {
+                alert('응답을 찾을 수 없습니다.');
+                return;
+            }
+            const order = targetResponse.order;
+            changeFrequentResponseOrder(id, order - 1);
+        }
+        async function changeOrderDown(id) {
+            targetResponse = frequentResponses.find(r => r.id === id);
+            if (!targetResponse) {
+                alert('응답을 찾을 수 없습니다.');
+                return;
+            }
+            const order = targetResponse.order;
+            changeFrequentResponseOrder(id, order + 1);
 
+        }
+        async function changeFrequentResponseOrder(id, order) {
+            const targetResponse = frequentResponses.find(r => r.id === id);
+            if (!targetResponse) {
+                alert('응답을 찾을 수 없습니다.');
+                return;
+            }
+            try {
+                taskClassification = targetResponse.taskClassification;
+                content = targetResponse.content;
+                const response = await fetch(`${API_URL}/frequentResponse/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ order, taskClassification, content })
+                });
+            } catch (e) {
+                console.error(e);
+                alert('순서 변경 중 오류가 발생했습니다.');
+            }
+            await loadFrequentResponses();
+        }
         async function deleteFrequentResponse(id) {
             if (!confirm('정말 삭제하시겠습니까?')) return;
             try {
