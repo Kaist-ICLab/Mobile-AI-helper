@@ -21,6 +21,7 @@ import android.media.MediaPlayer
 import android.media.MediaRecorder
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
+import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
@@ -38,6 +39,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.cardview.widget.CardView
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
@@ -120,47 +122,41 @@ class OverlayService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == "START_SESSION") {
-            val resultCode = intent.getIntExtra("RESULT_CODE", 0)
-            val data = intent.getParcelableExtra<Intent>("DATA")
-
-            if (resultCode == -1 && data != null) {
-                // 3. Promote Service IMMEDIATELY
-                updateForegroundService(enableScreenShare = true)
-                startDailyCall(data)
-            }
+        // --- HANDLE COMMANDS FROM MAIN ACTIVITY ---
+        if (intent?.action == "START_SCREEN_SHARE") {
+            startJitsiScreenShare()
         }
         return super.onStartCommand(intent, flags, startId)
     }
 
-    private fun startDailyCall(data: Intent) {
-        Log.d(TAG, "Joining Room: $DAILY_ROOM_URL")
+    private fun startJitsiScreenShare() {
+        // Use the internal session ID to create the room name
+        val roomName = "SeniorHelper_WOZ_$sessionId"
 
-        callClient?.join(DAILY_ROOM_URL) { joinResult ->
-            // Check for success (success object is not null)
-            if (joinResult.success != null) {
-                Log.d(TAG, "Joined Daily! Starting Screen Share...")
+        // Mute audio/video by default (since we use Clova/App for voice)
+        val jitsiUrl = "https://meet.jit.si/$roomName#config.startWithVideoMuted=true&config.startWithAudioMuted=true"
 
-                // 4. Start Sharing with slight delay to allow Service Type update
-                mainHandler.postDelayed({
-                    try {
-                        callClient?.startScreenShare(data)
-                        Log.d(TAG, "Screen Share command sent")
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error starting share: ${e.message}")
-                    }
-                }, 500)
+        Log.d(TAG, "Launching Jitsi Room: $roomName")
 
-            } else {
-                Log.e(TAG, "Daily Join Failed: ${joinResult.error?.msg}")
-                updateForegroundService(enableScreenShare = false)
+        try {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(jitsiUrl))
+            // FLAG_ACTIVITY_NEW_TASK is required when starting Activity from Service
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(intent)
+        } catch (e: Exception) {
+            Log.e(TAG, "Could not launch Jitsi", e)
+            mainHandler.post {
+                Toast.makeText(this, "Please install Jitsi Meet app first", Toast.LENGTH_LONG).show()
+                val playStoreIntent = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=org.jitsi.meet"))
+                playStoreIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                startActivity(playStoreIntent)
             }
         }
     }
 
     private fun updateForegroundService(enableScreenShare: Boolean) {
-        val channelId = "senior_helper_overlay"
-        val channelName = "Senior Helper"
+        val channelId = "mobile_ai_helper_overlay"
+        val channelName = "Mobile AI Helper"
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_LOW)
@@ -196,21 +192,36 @@ class OverlayService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        Log.d("OverlayService", "Destroying service and leaving room...")
+        wizardClient?.disconnect()
+        stopRecording()
+        bubbleView?.let { windowManager.removeView(it) }
+        chatView?.let { windowManager.removeView(it) }
+    }
 
-        // 1. LEAVE DAILY ROOM
-        callClient?.leave()
-        callClient?.release()
+    private fun startAsForegroundService() {
+        val channelId = "senior_helper_overlay"
+        val channelName = "Senior Helper"
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_LOW)
+            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            nm.createNotificationChannel(channel)
+        }
+        val notification = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Notification.Builder(this, channelId)
+                    .setContentTitle("Mobile AI Helper")
+                    .setContentText("Active Session: $sessionId")
+                    .setSmallIcon(android.R.drawable.ic_dialog_info)
+                    .build()
+        } else {
+            @Suppress("DEPRECATION")
+            Notification.Builder(this).setContentTitle("Helper").setSmallIcon(android.R.drawable.ic_dialog_info).build()
+        }
 
-        // 2. CLEANUP OTHER RESOURCES
-        try {
-            wizardClient?.disconnect()
-            stopRecording()
-
-            bubbleView?.let { windowManager.removeView(it) }
-            chatView?.let { windowManager.removeView(it) }
-        } catch (e: Exception) {
-            Log.e("OverlayService", "Error cleaning up UI", e)
+        // Android 14: Just Microphone type is enough since Jitsi handles the screen share separately
+        if (Build.VERSION.SDK_INT >= 34) {
+            startForeground(1, notification, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE)
+        } else {
+            startForeground(1, notification)
         }
     }
 
