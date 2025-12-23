@@ -88,10 +88,6 @@ class OverlayService : Service() {
     private val CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO
     private val AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT
 
-    // DAILY.CO CLIENT
-    private var callClient: CallClient? = null
-    private val DAILY_ROOM_URL = "https://mobile-woz.daily.co/woz-test"
-
     companion object {
         private const val TAG = "OverlayService"
         private fun generateSessionId(): String {
@@ -111,9 +107,6 @@ class OverlayService : Service() {
 
             windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
 
-            // 2. Initialize Daily Client (REMOVED THE LISTENER TO FIX ERROR)
-            callClient = CallClient(applicationContext)
-
             connectToWizardConsole()
             showBubble()
         } catch (e: Exception) {
@@ -123,35 +116,7 @@ class OverlayService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         // --- HANDLE COMMANDS FROM MAIN ACTIVITY ---
-        if (intent?.action == "START_SCREEN_SHARE") {
-            startJitsiScreenShare()
-        }
         return super.onStartCommand(intent, flags, startId)
-    }
-
-    private fun startJitsiScreenShare() {
-        // Use the internal session ID to create the room name
-        val roomName = "SeniorHelper_WOZ_$sessionId"
-
-        // Mute audio/video by default (since we use Clova/App for voice)
-        val jitsiUrl = "https://meet.jit.si/$roomName#config.startWithVideoMuted=true&config.startWithAudioMuted=true"
-
-        Log.d(TAG, "Launching Jitsi Room: $roomName")
-
-        try {
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(jitsiUrl))
-            // FLAG_ACTIVITY_NEW_TASK is required when starting Activity from Service
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            startActivity(intent)
-        } catch (e: Exception) {
-            Log.e(TAG, "Could not launch Jitsi", e)
-            mainHandler.post {
-                Toast.makeText(this, "Please install Jitsi Meet app first", Toast.LENGTH_LONG).show()
-                val playStoreIntent = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=org.jitsi.meet"))
-                playStoreIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                startActivity(playStoreIntent)
-            }
-        }
     }
 
     private fun updateForegroundService(enableScreenShare: Boolean) {
@@ -263,9 +228,16 @@ class OverlayService : Service() {
         bubbleLayout.addView(iconView)
 
         val layoutParams = WindowManager.LayoutParams(
-            160, 160,
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY else WindowManager.LayoutParams.TYPE_PHONE,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+            160, 160, // Width, Height
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+            else
+                WindowManager.LayoutParams.TYPE_PHONE,
+            // UPDATED FLAGS:
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                    WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
             PixelFormat.TRANSLUCENT
         )
         layoutParams.gravity = Gravity.TOP or Gravity.END
