@@ -309,6 +309,58 @@
         }
         .status-dot.connected { background: #4CAF50; }
 
+        /* Tutorial Controls */
+        .tutorial-controls {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #FFF9C4;
+            border: 2px solid #FBC02D;
+            border-radius: 8px;
+        }
+        .tutorial-controls h4 {
+            margin: 0 0 10px 0;
+            color: #6D4C41;
+            font-size: 16px;
+        }
+        .tutorial-controls select {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            background: white;
+            color: #4E342E;
+            border: 2px solid #FBC02D;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .tutorial-controls button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            background: #FBC02D;
+            color: #4E342E;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .tutorial-controls button:hover {
+            background: #F9A825;
+        }
+        .tutorial-controls button:disabled {
+            background: #ccc;
+            color: #999;
+            cursor: not-allowed;
+        }
+        .tutorial-step-indicator {
+            text-align: center;
+            margin-top: 5px;
+            color: #6D4C41;
+            font-size: 12px;
+        }
+
         .messages {
             flex: 1; /* Takes all available vertical space */
             overflow-y: auto;
@@ -325,7 +377,37 @@
         }
         .message.user { background: #E3F2FD; margin-left: auto; text-align: right; }
         .message.wizard { background: #C8E6C9; }
+        .message.tutorial {
+            background: #FFF9C4;
+            border: 2px solid #FBC02D;
+            max-width: 90%;
+        }
         .message-meta { font-size: 10px; color: #666; margin-bottom: 3px; }
+        .tutorial-step-badge {
+            display: inline-block;
+            background: #FBC02D;
+            color: #4E342E;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        .tutorial-title {
+            font-weight: bold;
+            color: #6D4C41;
+            margin-bottom: 5px;
+        }
+        .tutorial-body {
+            color: #4E342E;
+            line-height: 1.4;
+        }
+        .tutorial-action {
+            font-size: 10px;
+            color: #999;
+            margin-top: 5px;
+            font-style: italic;
+        }
 
         .input-area {
             padding: 15px;
@@ -394,6 +476,21 @@
             </div>
         </div>
         <div class="frequent-responses-column">
+            <!-- Tutorial Controls -->
+            <div class="tutorial-controls">
+                <h4>📚 Tutorial Controls</h4>
+                <select id="tutorialStepSelect" onchange="onStepSelected()">
+                    <option value="1">Step 1: 안녕하세요! 저는...</option>
+                    <option value="2">Step 2: 마이크 버튼을...</option>
+                    <option value="3">Step 3: 이해한 내용을...</option>
+                    <option value="4">Step 4: 버튼을 눌러야...</option>
+                    <option value="5">Step 5: 헷갈리면...</option>
+                </select>
+                <button onclick="showSelectedStep()" id="showStepBtn">Show Selected Step</button>
+                <button onclick="hideTutorial()" id="hideTutorialBtn" disabled>Hide Tutorial</button>
+                <div class="tutorial-step-indicator" id="tutorialStepIndicator"></div>
+            </div>
+
             <div class="frequent-responses-header">
                 <h3> Frequent Responses</h3>
                 <div class="frequent-responses-actions">
@@ -440,6 +537,41 @@
         let selectedClassification = '';
         const addResponseBackdrop = document.getElementById('addResponseBackdrop');
         const newResponseContent = document.getElementById('newResponseContent');
+
+        // Tutorial System
+        let currentTutorialStep = 0;
+        const tutorialSteps = [
+            {
+                step: 1,
+                total: 5,
+                title_ko: "도움말",
+                body_ko: "안녕하세요! 저는 휴대폰 사용을 도와주는 도우미예요. 천천히 말해도 괜찮아요."
+            },
+            {
+                step: 2,
+                total: 5,
+                title_ko: "도움말",
+                body_ko: "오른쪽 아래 마이크 버튼을 누르고, 하고 싶은 일을 말해 주세요."
+            },
+            {
+                step: 3,
+                total: 5,
+                title_ko: "도움말",
+                body_ko: "제가 이해한 내용을 확인하고, 다음 행동을 알려드릴게요."
+            },
+            {
+                step: 4,
+                total: 5,
+                title_ko: "도움말",
+                body_ko: "가끔은 화면에서 버튼을 눌러야 해요. 제가 '어디를 누르세요'라고 알려드릴게요."
+            },
+            {
+                step: 5,
+                total: 5,
+                title_ko: "도움말",
+                body_ko: "헷갈리면 '다시' 또는 '천천히'라고 말해 주세요. 제가 다시 안내할게요."
+            }
+        ];
 
         function connectToSession() {
             const sessionId = document.getElementById('sessionIdInput').value.trim();
@@ -740,17 +872,67 @@
             const container = document.getElementById('messagesContainer');
             // Auto-scroll only if already at bottom or new connection
             const shouldScroll = container.scrollHeight - container.scrollTop === container.clientHeight || lastMessageCount === 0;
-            
+
             container.innerHTML = '';
             messages.forEach(msg => {
-                const div = document.createElement('div');
-                div.className = `message ${msg.role.toLowerCase()}`;
-                div.innerHTML = `<div class="message-meta">${msg.role}</div>${escapeHtml(msg.text)}`;
-                container.appendChild(div);
+                const tutorialData = parseTutorialCommand(msg.text);
+
+                if (tutorialData) {
+                    // Render tutorial message in special yellow format
+                    const div = document.createElement('div');
+                    div.className = 'message tutorial';
+
+                    let actionText = '';
+                    if (tutorialData.action === 'show') {
+                        actionText = '📚 Tutorial Started';
+                    } else if (tutorialData.action === 'next' || tutorialData.action === 'update') {
+                        actionText = '➡️ Tutorial Step Updated';
+                    } else if (tutorialData.action === 'hide') {
+                        actionText = '✖️ Tutorial Hidden';
+                    }
+
+                    if (tutorialData.action === 'hide') {
+                        div.innerHTML = `
+                            <div class="message-meta">Tutorial Command</div>
+                            <div class="tutorial-action">${actionText}</div>
+                        `;
+                    } else {
+                        div.innerHTML = `
+                            <div class="message-meta">Tutorial Command</div>
+                            <div>
+                                <span class="tutorial-step-badge">Step ${tutorialData.step}/${tutorialData.total}</span>
+                                <span class="tutorial-action">${actionText}</span>
+                            </div>
+                            <div class="tutorial-title">${escapeHtml(tutorialData.title_ko)}</div>
+                            <div class="tutorial-body">${escapeHtml(tutorialData.body_ko)}</div>
+                        `;
+                    }
+
+                    container.appendChild(div);
+                } else {
+                    // Regular message
+                    const div = document.createElement('div');
+                    div.className = `message ${msg.role.toLowerCase()}`;
+                    div.innerHTML = `<div class="message-meta">${msg.role}</div>${escapeHtml(msg.text)}`;
+                    container.appendChild(div);
+                }
             });
 
             if (shouldScroll) container.scrollTop = container.scrollHeight;
             lastMessageCount = messages.length;
+        }
+
+        function parseTutorialCommand(text) {
+            // Check if text is a tutorial JSON command and parse it
+            try {
+                const json = JSON.parse(text);
+                if (json.type === 'tutorial') {
+                    return json;
+                }
+                return null;
+            } catch (e) {
+                return null; // Not JSON
+            }
         }
 
         async function sendReply() {
@@ -771,6 +953,101 @@
                 loadMessages();
             } catch (e) { alert('Error sending: ' + e); }
         }
+
+        // ==================== TUTORIAL CONTROLS ====================
+
+        async function sendTutorialCommand(tutorialData) {
+            if (!currentSessionId) {
+                alert('Connect to a session first!');
+                return;
+            }
+
+            const payload = JSON.stringify(tutorialData);
+
+            try {
+                await fetch(`${API_URL}/message`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        session_id: currentSessionId,
+                        role: 'wizard',
+                        text: payload
+                    })
+                });
+                console.log('Tutorial command sent:', tutorialData);
+            } catch (e) {
+                alert('Error sending tutorial command: ' + e);
+            }
+        }
+
+        function onStepSelected() {
+            // Called when step dropdown changes
+            // Just to enable the show button if tutorial was hidden
+            if (currentTutorialStep === 0) {
+                document.getElementById('showStepBtn').disabled = false;
+            }
+        }
+
+        function showSelectedStep() {
+            const selectedStep = parseInt(document.getElementById('tutorialStepSelect').value);
+            currentTutorialStep = selectedStep;
+            const stepData = tutorialSteps[selectedStep - 1];
+
+            const action = currentTutorialStep === 0 ? 'show' : 'update';
+
+            sendTutorialCommand({
+                type: 'tutorial',
+                action: action,
+                step: stepData.step,
+                total: stepData.total,
+                title_ko: stepData.title_ko,
+                body_ko: stepData.body_ko
+            });
+
+            updateTutorialUI();
+        }
+
+        function hideTutorial() {
+            currentTutorialStep = 0;
+
+            sendTutorialCommand({
+                type: 'tutorial',
+                action: 'hide',
+                step: 0,
+                total: 0,
+                title_ko: '',
+                body_ko: ''
+            });
+
+            updateTutorialUI();
+        }
+
+        function updateTutorialUI() {
+            const showBtn = document.getElementById('showStepBtn');
+            const hideBtn = document.getElementById('hideTutorialBtn');
+            const indicator = document.getElementById('tutorialStepIndicator');
+            const stepSelect = document.getElementById('tutorialStepSelect');
+
+            if (currentTutorialStep === 0) {
+                // Tutorial hidden
+                showBtn.disabled = false;
+                hideBtn.disabled = true;
+                indicator.textContent = '';
+                stepSelect.disabled = false;
+            } else {
+                // Tutorial visible
+                showBtn.disabled = false; // Can still change step
+                hideBtn.disabled = false;
+                indicator.textContent = `Currently showing: Step ${currentTutorialStep}/${tutorialSteps.length}`;
+                stepSelect.disabled = false; // Can change step even when visible
+                stepSelect.value = currentTutorialStep; // Sync dropdown with current step
+            }
+        }
+
+        // Initialize tutorial UI on page load
+        window.addEventListener('load', function() {
+            updateTutorialUI();
+        });
 
         function escapeHtml(text) {
             const div = document.createElement('div');

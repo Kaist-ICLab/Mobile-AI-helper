@@ -64,7 +64,7 @@ class OverlayService : Service() {
 
     // SERVER URLS
     private val HTTP_SERVER_URL = "https://mobile-woz-agent.iclab.dev"
-
+    // private val HTTP_SERVER_URL = "http://172.20.60.24:8000"
     // ==================== VARIABLES ====================
     private lateinit var windowManager: WindowManager
     private var bubbleView: View? = null
@@ -75,6 +75,14 @@ class OverlayService : Service() {
     private lateinit var messagesScroll: ScrollView
     private lateinit var sessionIdText: TextView
     private var currentMessageView: View? = null
+
+    // Tutorial State
+    private var isTutorialVisible = false
+    private var tutorialStep = 0
+    private var tutorialTotal = 0
+    private var tutorialTitleKo = ""
+    private var tutorialBodyKo = ""
+    private var tutorialCardView: View? = null
 
     // Wizard Chat Client
     private var wizardClient: WizardConsoleClient? = null
@@ -198,8 +206,11 @@ class OverlayService : Service() {
             onMessageReceived = { message ->
                 mainHandler.post {
                     if (::messagesContainer.isInitialized) {
-                        showAssistantResponse(message)
-                        messagesScroll.post { messagesScroll.fullScroll(View.FOCUS_DOWN) }
+                        handleWizardPayload(message)
+                        // Only scroll down if not showing tutorial (tutorial scrolls to top)
+                        if (!isTutorialVisible) {
+                            messagesScroll.post { messagesScroll.fullScroll(View.FOCUS_DOWN) }
+                        }
                     }
                 }
             },
@@ -605,5 +616,133 @@ class OverlayService : Service() {
             mp.setOnCompletionListener { it.release(); tempFile.delete() }
             mp.prepareAsync()
         } catch (e: Exception) { Log.e(TAG, "Play Error", e) }
+    }
+
+    // ==================== TUTORIAL SYSTEM ====================
+
+    private fun handleWizardPayload(text: String) {
+        try {
+            // Try to parse as JSON
+            val json = JSONObject(text)
+            if (json.optString("type") == "tutorial") {
+                val action = json.optString("action", "")
+                val step = json.optInt("step", 0)
+                val total = json.optInt("total", 0)
+                val titleKo = json.optString("title_ko", "도움말")
+                val bodyKo = json.optString("body_ko", "")
+
+                Log.d(TAG, "Tutorial command: action=$action, step=$step, total=$total")
+
+                when (action) {
+                    "show", "update", "next" -> {
+                        showTutorialCard(step, total, titleKo, bodyKo)
+                    }
+                    "hide" -> {
+                        hideTutorialCard()
+                    }
+                }
+                return
+            }
+        } catch (e: Exception) {
+            // Not valid JSON or not a tutorial command - treat as normal message
+            Log.d(TAG, "Not a tutorial command, treating as normal message")
+        }
+
+        // Fall back to normal assistant response
+        showAssistantResponse(text)
+    }
+
+    private fun showTutorialCard(step: Int, total: Int, titleKo: String, bodyKo: String) {
+        if (!::messagesContainer.isInitialized) {
+            Log.w(TAG, "Messages container not initialized")
+            return
+        }
+
+        // Update state
+        tutorialStep = step
+        tutorialTotal = total
+        tutorialTitleKo = titleKo
+        tutorialBodyKo = bodyKo
+        isTutorialVisible = true
+
+        // Remove existing tutorial card if present
+        tutorialCardView?.let { messagesContainer.removeView(it) }
+
+        // Create tutorial card
+        val cardLayout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = 30f
+                setColor(0xFFFFF9C4.toInt()) // Light yellow background
+                setStroke(4, 0xFFFBC02D.toInt()) // Yellow border
+            }
+            setPadding(30, 25, 30, 25)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(0, 10, 0, 10)
+            }
+        }
+
+        // Step indicator (e.g., "1/5")
+        val stepIndicator = TextView(this).apply {
+            text = "$step/$total"
+            textSize = 16f
+            setTextColor(0xFF6D4C41.toInt()) // Brown
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            gravity = Gravity.END
+        }
+
+        // Title
+        val titleView = TextView(this).apply {
+            text = titleKo
+            textSize = 20f
+            setTextColor(0xFF6D4C41.toInt())
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            setPadding(0, 5, 0, 10)
+        }
+
+        // Body
+        val bodyView = TextView(this).apply {
+            text = bodyKo
+            textSize = 22f
+            setTextColor(0xFF4E342E.toInt()) // Dark brown
+            lineHeight = (26 * resources.displayMetrics.scaledDensity).toInt()
+        }
+
+        cardLayout.addView(stepIndicator)
+        cardLayout.addView(titleView)
+        cardLayout.addView(bodyView)
+
+        // Add to messages container (insert at top)
+        messagesContainer.addView(cardLayout, 0)
+        tutorialCardView = cardLayout
+
+        // Scroll to top to show tutorial
+        messagesScroll.post { messagesScroll.smoothScrollTo(0, 0) }
+
+        // Speak the tutorial body in Korean
+        clovaTTS(bodyKo)
+
+        Log.i(TAG, "Tutorial card shown: step $step/$total")
+    }
+
+    private fun hideTutorialCard() {
+        if (!::messagesContainer.isInitialized) return
+
+        tutorialCardView?.let {
+            messagesContainer.removeView(it)
+            tutorialCardView = null
+        }
+
+        isTutorialVisible = false
+        tutorialStep = 0
+        tutorialTotal = 0
+        tutorialTitleKo = ""
+        tutorialBodyKo = ""
+
+        Log.i(TAG, "Tutorial card hidden")
     }
 }
