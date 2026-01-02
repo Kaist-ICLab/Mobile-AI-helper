@@ -12,4 +12,10 @@ build/
 .DS_Store
 .vscode/
 
-local.properties
+local.propertiesbackend/wizard_of_oz.log
+backend/frequent_responses.json
+backend/task_classifications.json
+frontend/android/.gradle/
+frontend/android/local.properties
+frontend/android/.gradle/
+backend/wizard_of_oz.log
