@@ -83,6 +83,28 @@ class OverlayService : Service() {
     private var tutorialTitleKo = ""
     private var tutorialBodyKo = ""
     private var tutorialCardView: View? = null
+    private var hiddenMessages = mutableListOf<View>()
+
+    // Chat window state
+    private var currentChatHeight = 1500
+    private var isMinimized = false
+    private var chatLayoutParams: WindowManager.LayoutParams? = null
+
+    // Header drag state
+    private var headerLastY = 0
+    private var headerTouchedY = 0f
+    private var isDraggingResize = false
+    private var isDraggingMove = false
+    private var dragStartHeight = 0
+
+    // Store UI references for visibility toggling
+    private lateinit var controlsLayout: LinearLayout
+    private lateinit var minimizeButton: ImageButton
+    private lateinit var topResizeHandle: View
+    private lateinit var bottomResizeHandle: View
+
+    // Resize threshold in pixels (calculated from dp)
+    private var resizeThresholdPx = 0
 
     // Wizard Chat Client
     private var wizardClient: WizardConsoleClient? = null
@@ -98,6 +120,10 @@ class OverlayService : Service() {
 
     companion object {
         private const val TAG = "OverlayService"
+        private const val MIN_CHAT_HEIGHT = 800
+        private const val MAX_CHAT_HEIGHT = 1500
+        private const val RESIZE_THRESHOLD_DP = 20  // Edge detection zone in dp
+
         private fun generateSessionId(): String {
             return Random.nextInt(1000, 9999).toString()
         }
@@ -317,6 +343,9 @@ class OverlayService : Service() {
     private fun showChatWindow() {
         if (chatView != null) return
 
+        // Calculate resize threshold in pixels from dp
+        resizeThresholdPx = (RESIZE_THRESHOLD_DP * resources.displayMetrics.density).toInt()
+
         val chatLayout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             val drawable = GradientDrawable().apply {
@@ -346,6 +375,16 @@ class OverlayService : Service() {
             setTypeface(null, android.graphics.Typeface.BOLD)
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
+        minimizeButton = ImageButton(this).apply {
+            setImageResource(android.R.drawable.ic_menu_upload)
+            setBackgroundColor(Color.TRANSPARENT)
+            setColorFilter(Color.WHITE)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { setMargins(16, 0, 16, 0) }
+            setOnClickListener { toggleMinimize() }
+        }
         val closeButton = ImageButton(this).apply {
             setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
             setBackgroundColor(Color.TRANSPARENT)
@@ -353,6 +392,7 @@ class OverlayService : Service() {
             setOnClickListener { hideChatWindow() }
         }
         topRow.addView(titleText)
+        topRow.addView(minimizeButton)
         topRow.addView(closeButton)
 
         sessionIdText = TextView(this).apply {
@@ -362,6 +402,40 @@ class OverlayService : Service() {
         }
         headerLayout.addView(topRow)
         headerLayout.addView(sessionIdText)
+
+        // Add touch listener for drag-move only (header moves window)
+        headerLayout.setOnTouchListener(object : View.OnTouchListener {
+            override fun onTouch(v: View?, event: MotionEvent): Boolean {
+                if (chatLayoutParams == null || isMinimized) return false
+
+                when (event.action) {
+                    MotionEvent.ACTION_DOWN -> {
+                        headerLastY = chatLayoutParams!!.y
+                        headerTouchedY = event.rawY
+                        isDraggingMove = false
+                        return true
+                    }
+
+                    MotionEvent.ACTION_MOVE -> {
+                        val deltaY = event.rawY - headerTouchedY
+
+                        if (kotlin.math.abs(deltaY) > 10) {
+                            // MOVE MODE: Adjust window position
+                            isDraggingMove = true
+                            chatLayoutParams!!.y = headerLastY - deltaY.toInt()
+                            windowManager.updateViewLayout(chatView, chatLayoutParams)
+                        }
+                        return true
+                    }
+
+                    MotionEvent.ACTION_UP -> {
+                        isDraggingMove = false
+                        return true
+                    }
+                }
+                return false
+            }
+        })
 
         messagesScroll = ScrollView(this).apply {
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f)
@@ -374,7 +448,7 @@ class OverlayService : Service() {
         }
         messagesScroll.addView(messagesContainer)
 
-        val controlsLayout = LinearLayout(this).apply {
+        controlsLayout = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             setPadding(40, 30, 40, 30)
             setBackgroundColor(Color.WHITE)
@@ -392,26 +466,157 @@ class OverlayService : Service() {
         }
         controlsLayout.addView(micButton)
 
+        // Create top resize handle (invisible)
+        topResizeHandle = View(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                resizeThresholdPx
+            )
+            setBackgroundColor(Color.TRANSPARENT)
+            setOnTouchListener(createResizeListener(isTop = true))
+        }
+
+        // Create bottom resize handle (visible with nice styling)
+        bottomResizeHandle = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                resizeThresholdPx + 10  // Slightly taller for easier grabbing
+            )
+            setPadding(0, 5, 0, 5)
+            setBackgroundColor(0xFFE0E0E0.toInt())
+
+            // Add visual indicator (three horizontal lines)
+            val indicator = View(this@OverlayService).apply {
+                layoutParams = LinearLayout.LayoutParams(60, 4).apply {
+                    setMargins(0, 2, 0, 2)
+                }
+                background = GradientDrawable().apply {
+                    shape = GradientDrawable.RECTANGLE
+                    cornerRadius = 2f
+                    setColor(0xFF9E9E9E.toInt())
+                }
+            }
+            addView(indicator)
+
+            setOnTouchListener(createResizeListener(isTop = false))
+        }
+
+        chatLayout.addView(topResizeHandle)
         chatLayout.addView(headerLayout)
         chatLayout.addView(messagesScroll)
         chatLayout.addView(controlsLayout)
+        chatLayout.addView(bottomResizeHandle)
 
-        val chatParams = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.MATCH_PARENT, 1100,
+        chatLayoutParams = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.MATCH_PARENT, currentChatHeight,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY else WindowManager.LayoutParams.TYPE_PHONE,
             WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         )
-        chatParams.gravity = Gravity.BOTTOM
-        chatParams.y = 100
+        chatLayoutParams!!.gravity = Gravity.BOTTOM
+        chatLayoutParams!!.y = 100
         chatView = chatLayout
-        windowManager.addView(chatView, chatParams)
+        windowManager.addView(chatView, chatLayoutParams)
         isChatVisible = true
     }
 
     private fun hideChatWindow() {
         if (isRecording) stopRecording()
-        chatView?.let { windowManager.removeView(it); chatView = null; isChatVisible = false }
+        chatView?.let {
+            windowManager.removeView(it)
+            chatView = null
+            chatLayoutParams = null  // Clear params
+            isChatVisible = false
+            isMinimized = false  // Reset state
+        }
+    }
+
+    private fun toggleMinimize() {
+        if (chatView == null || chatLayoutParams == null) return
+
+        isMinimized = !isMinimized
+
+        if (isMinimized) {
+            // Hide content, show only header
+            messagesScroll.visibility = View.GONE
+            if (::controlsLayout.isInitialized) {
+                controlsLayout.visibility = View.GONE
+            }
+            if (::topResizeHandle.isInitialized) {
+                topResizeHandle.visibility = View.GONE
+            }
+            if (::bottomResizeHandle.isInitialized) {
+                bottomResizeHandle.visibility = View.GONE
+            }
+            chatLayoutParams!!.height = MIN_CHAT_HEIGHT
+        } else {
+            // Restore full view
+            messagesScroll.visibility = View.VISIBLE
+            if (::controlsLayout.isInitialized) {
+                controlsLayout.visibility = View.VISIBLE
+            }
+            if (::topResizeHandle.isInitialized) {
+                topResizeHandle.visibility = View.VISIBLE
+            }
+            if (::bottomResizeHandle.isInitialized) {
+                bottomResizeHandle.visibility = View.VISIBLE
+            }
+            chatLayoutParams!!.height = currentChatHeight
+        }
+
+        windowManager.updateViewLayout(chatView, chatLayoutParams)
+
+        // Update minimize button icon
+        if (::minimizeButton.isInitialized) {
+            minimizeButton.setImageResource(
+                if (isMinimized) android.R.drawable.ic_menu_more  // Expand icon
+                else android.R.drawable.ic_menu_upload           // Minimize icon
+            )
+        }
+    }
+
+    private fun createResizeListener(isTop: Boolean): View.OnTouchListener {
+        return object : View.OnTouchListener {
+            override fun onTouch(v: View?, event: MotionEvent): Boolean {
+                if (chatLayoutParams == null || isMinimized) return false
+
+                when (event.action) {
+                    MotionEvent.ACTION_DOWN -> {
+                        dragStartHeight = chatLayoutParams!!.height
+                        headerTouchedY = event.rawY
+                        isDraggingResize = true
+                        return true
+                    }
+
+                    MotionEvent.ACTION_MOVE -> {
+                        if (!isDraggingResize) return true
+
+                        val deltaY = event.rawY - headerTouchedY
+
+                        val newHeight = if (isTop) {
+                            // Top edge: dragging up decreases height, dragging down increases height
+                            (dragStartHeight - deltaY.toInt()).coerceIn(MIN_CHAT_HEIGHT, MAX_CHAT_HEIGHT)
+                        } else {
+                            // Bottom edge: dragging down increases height, dragging up decreases height
+                            (dragStartHeight + deltaY.toInt()).coerceIn(MIN_CHAT_HEIGHT, MAX_CHAT_HEIGHT)
+                        }
+
+                        chatLayoutParams!!.height = newHeight
+                        currentChatHeight = newHeight
+                        windowManager.updateViewLayout(chatView, chatLayoutParams)
+                        return true
+                    }
+
+                    MotionEvent.ACTION_UP -> {
+                        isDraggingResize = false
+                        return true
+                    }
+                }
+                return false
+            }
+        }
     }
 
     private fun clearMessage() {
@@ -424,7 +629,7 @@ class OverlayService : Service() {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER
         }
         val text = TextView(this).apply {
-            text = message; textSize = 24f; setTextColor(Color.WHITE)
+            text = message; textSize = 34f; setTextColor(Color.WHITE)
             background = GradientDrawable().apply { shape = GradientDrawable.RECTANGLE; cornerRadius = 35f; setColor(0xFF42A5F5.toInt()) }
             setPadding(40, 35, 40, 35)
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(0, 0, 20, 0) }
@@ -443,7 +648,7 @@ class OverlayService : Service() {
         }
         val icon = createIcon(R.drawable.chat_icon)
         val text = TextView(this).apply {
-            text = message; textSize = 24f; setTextColor(0xFF1565C0.toInt())
+            text = message; textSize = 34f; setTextColor(0xFF1565C0.toInt())
             background = GradientDrawable().apply { shape = GradientDrawable.RECTANGLE; cornerRadius = 35f; setColor(0xFFE3F2FD.toInt()) }
             setPadding(40, 35, 40, 35)
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(20, 0, 0, 0) }
@@ -487,7 +692,13 @@ class OverlayService : Service() {
                 }
 
                 isRecording = true
-                mainHandler.post { updateMicButton(true) }
+                mainHandler.post {
+                    updateMicButton(true)
+                    // Hide tutorial when user starts speaking
+                    if (isTutorialVisible) {
+                        hideTutorialCard()
+                    }
+                }
                 recorder?.startRecording()
 
                 val pcmBuffer = ByteArrayOutputStream()
@@ -668,6 +879,16 @@ class OverlayService : Service() {
         // Remove existing tutorial card if present
         tutorialCardView?.let { messagesContainer.removeView(it) }
 
+        // Hide all existing messages
+        hiddenMessages.clear()
+        for (i in 0 until messagesContainer.childCount) {
+            val child = messagesContainer.getChildAt(i)
+            if (child.visibility == View.VISIBLE) {
+                child.visibility = View.GONE
+                hiddenMessages.add(child)
+            }
+        }
+
         // Create tutorial card
         val cardLayout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -689,7 +910,7 @@ class OverlayService : Service() {
         // Step indicator (e.g., "1/5")
         val stepIndicator = TextView(this).apply {
             text = "$step/$total"
-            textSize = 16f
+            textSize = 24f
             setTextColor(0xFF6D4C41.toInt()) // Brown
             setTypeface(null, android.graphics.Typeface.BOLD)
             gravity = Gravity.END
@@ -698,7 +919,7 @@ class OverlayService : Service() {
         // Title
         val titleView = TextView(this).apply {
             text = titleKo
-            textSize = 20f
+            textSize = 32f
             setTextColor(0xFF6D4C41.toInt())
             setTypeface(null, android.graphics.Typeface.BOLD)
             setPadding(0, 5, 0, 10)
@@ -707,9 +928,9 @@ class OverlayService : Service() {
         // Body
         val bodyView = TextView(this).apply {
             text = bodyKo
-            textSize = 22f
+            textSize = 34f
             setTextColor(0xFF4E342E.toInt()) // Dark brown
-            lineHeight = (26 * resources.displayMetrics.scaledDensity).toInt()
+            lineHeight = (38 * resources.displayMetrics.scaledDensity).toInt()
         }
 
         cardLayout.addView(stepIndicator)
@@ -737,12 +958,18 @@ class OverlayService : Service() {
             tutorialCardView = null
         }
 
+        // Clear all hidden messages permanently instead of restoring
+        hiddenMessages.clear()
+
+        // Clear the entire message container
+        messagesContainer.removeAllViews()
+
         isTutorialVisible = false
         tutorialStep = 0
         tutorialTotal = 0
         tutorialTitleKo = ""
         tutorialBodyKo = ""
 
-        Log.i(TAG, "Tutorial card hidden")
+        Log.i(TAG, "Tutorial card hidden, screen cleared")
     }
 }
