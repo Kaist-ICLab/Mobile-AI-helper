@@ -141,29 +141,63 @@ class WizardConsoleClient(
             put("role", "user")
             put("text", message)
         }
-        
+
         val mediaType = "application/json; charset=utf-8".toMediaType()
         val requestBody = json.toString().toRequestBody(mediaType)
-        
+
         val request = Request.Builder()
             .url("$serverUrl/message")
             .post(requestBody)
             .build()
-        
+
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 Log.e(TAG, "Failed to send message: ${e.message}", e)
             }
-            
+
             override fun onResponse(call: Call, response: Response) {
                 val success = response.isSuccessful
                 response.close()
-                
+
                 if (success) {
                     Log.d(TAG, "Message sent successfully: $message")
                 } else {
                     Log.e(TAG, "Failed to send message: ${response.code}")
                 }
+            }
+        })
+    }
+
+    fun sendEvent(eventType: String, data: Map<String, Any> = emptyMap()) {
+        val eventJson = JSONObject().apply {
+            put("type", "event")
+            put("event", eventType)
+            put("timestamp", System.currentTimeMillis())
+            data.forEach { (key, value) -> put(key, value) }
+        }
+
+        val json = JSONObject().apply {
+            put("session_id", sessionId)
+            put("role", "system")
+            put("text", eventJson.toString())
+        }
+
+        val mediaType = "application/json; charset=utf-8".toMediaType()
+        val requestBody = json.toString().toRequestBody(mediaType)
+
+        val request = Request.Builder()
+            .url("$serverUrl/message")
+            .post(requestBody)
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.e(TAG, "Failed to send event: ${e.message}", e)
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.close()
+                Log.d(TAG, "Event sent: $eventType")
             }
         })
     }

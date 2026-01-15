@@ -104,6 +104,37 @@
     .message.user { background: #E3F2FD; margin-left: auto; border-bottom-right-radius: 2px; }
     .message.wizard { background: #C8E6C9; border-bottom-left-radius: 2px; }
     .message-meta { font-size: 11px; color: #666; margin-bottom: 4px; font-weight: bold; }
+    .message-timestamp { font-size: 10px; color: #999; margin-top: 4px; }
+    .message-gap { font-size: 10px; color: #E53935; font-style: italic; }
+
+    /* Speaking indicator */
+    .speaking-indicator {
+      background: #FFEB3B;
+      border: 2px solid #FBC02D;
+      border-radius: 8px;
+      padding: 10px 15px;
+      margin-bottom: 12px;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      animation: pulse 1.5s infinite;
+    }
+    .speaking-indicator.active { display: flex; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    .speaking-dot {
+      width: 12px;
+      height: 12px;
+      background: #E53935;
+      border-radius: 50%;
+      animation: blink 0.8s infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
 
     .input-area { padding: 15px; background: white; border-top: 1px solid #ddd; display: flex; flex-direction: column; gap: 10px; }
     .input-area textarea {
@@ -300,6 +331,11 @@
       </div>
 
       <div class="messages" id="messagesContainer">
+        <div id="speakingIndicator" class="speaking-indicator">
+          <div class="speaking-dot"></div>
+          <span>🎤 User is speaking...</span>
+          <span id="speakingTimer" style="margin-left:auto; font-weight:bold;">0s</span>
+        </div>
         <div style="text-align:center; color:#999; margin-top:100px; display:flex; flex-direction:column; gap:10px;">
           <span style="font-size:40px;">💬</span>
           <span>Enter Session ID to start</span>
@@ -313,15 +349,17 @@
     </div>
 
     <div class="frequent-responses-column">
-      <!-- Tutorial Controls (added to Chanhee 2-column version) -->
+      <!-- Tutorial Controls -->
       <div class="tutorial-controls">
         <h4>📚 Tutorial Controls</h4>
-        <select id="tutorialStepSelect" onchange="onStepSelected()">
-          <option value="1">Step 1: 안녕하세요! 저는...</option>
-          <option value="2">Step 2: 마이크 버튼을...</option>
-          <option value="3">Step 3: 이해한 내용을...</option>
-          <option value="4">Step 4: 버튼을 눌러야...</option>
-          <option value="5">Step 5: 헷갈리면...</option>
+        <select id="tutorialStepSelect" onchange="onStepSelected()" style="white-space: normal; height: auto; min-height: 36px;">
+          <option value="1">1. 안녕하세요! 저는 휴대폰 사용을 도와주는 도우미예요...</option>
+          <option value="2">2. 마이크 버튼을 누르고, 하고 싶은 일을 말해 주세요</option>
+          <option value="3">3. 제가 이해한 내용을 확인하고, 다음 행동을 알려드릴게요</option>
+          <option value="4">4. 화면에서 버튼을 눌러야 해요. 어디를 누르세요라고 알려드릴게요</option>
+          <option value="5">5. 헷갈리면 다시 또는 천천히라고 말해 주세요</option>
+          <option value="6">6. 반복 버튼을 누르면 방금 말한 내용을 다시 보낼 수 있어요</option>
+          <option value="7">7. 창 이동: 위쪽 파란색 부분을 길게 누른 채로 끌어서 이동</option>
         </select>
         <button onclick="showSelectedStep()" id="showStepBtn">Show Selected Step</button>
         <button onclick="hideTutorial()" id="hideTutorialBtn" disabled>Hide Tutorial</button>
@@ -370,17 +408,79 @@
     let taskClassifications = [];
     let selectedClassification = '';
 
+    // Speaking indicator state
+    let isUserSpeaking = false;
+    let speakingStartTime = null;
+    let speakingTimerInterval = null;
+
+    function showSpeakingIndicator() {
+      isUserSpeaking = true;
+      speakingStartTime = Date.now();
+      const indicator = document.getElementById('speakingIndicator');
+      indicator.classList.add('active');
+
+      // Start timer update
+      speakingTimerInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - speakingStartTime) / 1000);
+        document.getElementById('speakingTimer').textContent = elapsed + 's';
+      }, 100);
+    }
+
+    function hideSpeakingIndicator() {
+      isUserSpeaking = false;
+      const indicator = document.getElementById('speakingIndicator');
+      indicator.classList.remove('active');
+      if (speakingTimerInterval) {
+        clearInterval(speakingTimerInterval);
+        speakingTimerInterval = null;
+      }
+    }
+
+    function parseEventData(text) {
+      try {
+        const json = JSON.parse(text);
+        if (json && json.type === 'event') return json;
+        return null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function formatTimestamp(timestamp) {
+      if (!timestamp) return '';
+      const date = new Date(timestamp);
+      return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+
+    function formatDuration(ms) {
+      if (!ms) return '';
+      const seconds = Math.floor(ms / 1000);
+      const tenths = Math.floor((ms % 1000) / 100);
+      return seconds + '.' + tenths + 's';
+    }
+
+    function formatGap(ms) {
+      if (ms < 1000) return '';
+      const seconds = Math.floor(ms / 1000);
+      if (seconds < 60) return '⏱️ ' + seconds + 's gap';
+      const minutes = Math.floor(seconds / 60);
+      const remainingSecs = seconds % 60;
+      return '⏱️ ' + minutes + 'm ' + remainingSecs + 's gap';
+    }
+
     const addResponseBackdrop = document.getElementById('addResponseBackdrop');
     const newResponseContent = document.getElementById('newResponseContent');
 
     // ==================== TUTORIAL SYSTEM ====================
     let currentTutorialStep = 0;
     const tutorialSteps = [
-      { step: 1, total: 5, title_ko: "도움말", body_ko: "안녕하세요! 저는 휴대폰 사용을 도와주는 도우미예요. 천천히 말해도 괜찮아요." },
-      { step: 2, total: 5, title_ko: "도움말", body_ko: "오른쪽 아래 마이크 버튼을 누르고, 하고 싶은 일을 말해 주세요." },
-      { step: 3, total: 5, title_ko: "도움말", body_ko: "제가 이해한 내용을 확인하고, 다음 행동을 알려드릴게요." },
-      { step: 4, total: 5, title_ko: "도움말", body_ko: "가끔은 화면에서 버튼을 눌러야 해요. 제가 '어디를 누르세요'라고 알려드릴게요." },
-      { step: 5, total: 5, title_ko: "도움말", body_ko: "헷갈리면 '다시' 또는 '천천히'라고 말해 주세요. 제가 다시 안내할게요." }
+      { step: 1, total: 7, title_ko: "도움말", body_ko: "안녕하세요! 저는 휴대폰 사용을 도와주는 도우미예요. 천천히 말해도 괜찮아요." },
+      { step: 2, total: 7, title_ko: "도움말", body_ko: "오른쪽 아래 마이크 버튼을 누르고, 하고 싶은 일을 말해 주세요." },
+      { step: 3, total: 7, title_ko: "도움말", body_ko: "제가 이해한 내용을 확인하고, 다음 행동을 알려드릴게요." },
+      { step: 4, total: 7, title_ko: "도움말", body_ko: "가끔은 화면에서 버튼을 눌러야 해요. 제가 '어디를 누르세요'라고 알려드릴게요." },
+      { step: 5, total: 7, title_ko: "도움말", body_ko: "헷갈리면 '다시' 또는 '천천히'라고 말해 주세요. 제가 다시 안내할게요." },
+      { step: 6, total: 7, title_ko: "도움말", body_ko: "위쪽에 있는 반복 버튼을 누르면 방금 말한 내용을 다시 보낼 수 있어요." },
+      { step: 7, total: 7, title_ko: "창 이동하기", body_ko: "이 창을 옮기고 싶으면, 위쪽 파란색 부분을 길게 누른 채로 위아래로 끌어서 움직이세요." }
     ];
 
     async function sendTutorialCommand(tutorialData) {
@@ -495,7 +595,18 @@
     }
 
     function refreshMessages() {
-      loadMessages();
+      if (!currentSessionId) {
+        alert('Connect to a session first!');
+        return;
+      }
+      const btn = event.target;
+      const originalText = btn.textContent;
+      btn.textContent = '⏳ Loading...';
+      btn.disabled = true;
+      loadMessages().finally(() => {
+        btn.textContent = originalText;
+        btn.disabled = false;
+      });
     }
 
     async function loadMessages() {
@@ -533,15 +644,55 @@
         container.scrollHeight - container.scrollTop === container.clientHeight ||
         lastMessageCount === 0;
 
+      // Keep speaking indicator
+      const speakingIndicator = document.getElementById('speakingIndicator');
       container.innerHTML = '';
+      container.appendChild(speakingIndicator);
+
       if (!messages || messages.length === 0) {
-        container.innerHTML = '<div style="text-align:center; color:#999; margin-top:50px;">No messages yet.</div>';
+        container.innerHTML += '<div style="text-align:center; color:#999; margin-top:50px;">No messages yet.</div>';
         lastMessageCount = 0;
         return;
       }
 
-      messages.forEach(msg => {
+      let lastTimestamp = null;
+      let lastSpeakingEvent = null;
+
+      messages.forEach((msg, index) => {
         const tutorialData = parseTutorialCommand(msg.text);
+        const eventData = parseEventData(msg.text);
+
+        // Handle events (speaking indicators, etc.)
+        if (eventData) {
+          // Update speaking indicator state
+          if (eventData.event === 'speaking_started') {
+            showSpeakingIndicator();
+            lastSpeakingEvent = eventData;
+          } else if (eventData.event === 'speaking_stopped') {
+            hideSpeakingIndicator();
+
+            // Show event message
+            const div = document.createElement('div');
+            div.className = 'message event';
+            const duration = eventData.duration_ms ? formatDuration(eventData.duration_ms) : '';
+            div.innerHTML = `
+              <span class="event-icon">🎤</span>
+              User spoke for <span class="event-duration">${duration}</span>
+              <div class="message-timestamp">${formatTimestamp(eventData.timestamp)}</div>
+            `;
+            container.appendChild(div);
+            lastTimestamp = eventData.timestamp;
+          }
+          return;
+        }
+
+        // Calculate time gap from previous message
+        const currentTimestamp = msg.timestamp ? new Date(msg.timestamp).getTime() : null;
+        let gapHtml = '';
+        if (lastTimestamp && currentTimestamp && (currentTimestamp - lastTimestamp > 5000)) {
+          gapHtml = `<div class="message-gap">${formatGap(currentTimestamp - lastTimestamp)}</div>`;
+        }
+        if (currentTimestamp) lastTimestamp = currentTimestamp;
 
         if (tutorialData) {
           const div = document.createElement('div');
@@ -554,11 +705,14 @@
 
           if (tutorialData.action === 'hide') {
             div.innerHTML = `
+              ${gapHtml}
               <div class="message-meta">Tutorial Command</div>
               <div class="tutorial-action">${escapeHtml(actionText)}</div>
+              <div class="message-timestamp">${formatTimestamp(msg.timestamp)}</div>
             `;
           } else {
             div.innerHTML = `
+              ${gapHtml}
               <div class="message-meta">Tutorial Command</div>
               <div>
                 <span class="tutorial-step-badge">Step ${escapeHtml(String(tutorialData.step))}/${escapeHtml(String(tutorialData.total))}</span>
@@ -566,6 +720,7 @@
               </div>
               <div class="tutorial-title">${escapeHtml(tutorialData.title_ko || '')}</div>
               <div class="tutorial-body">${escapeHtml(tutorialData.body_ko || '')}</div>
+              <div class="message-timestamp">${formatTimestamp(msg.timestamp)}</div>
             `;
           }
 
@@ -574,8 +729,10 @@
           const div = document.createElement('div');
           div.className = `message ${String(msg.role || '').toLowerCase()}`;
           div.innerHTML = `
+            ${gapHtml}
             <div class="message-meta">${escapeHtml(String(msg.role || '').toUpperCase())}</div>
             <div>${escapeHtml(String(msg.text ?? ''))}</div>
+            <div class="message-timestamp">${formatTimestamp(msg.timestamp)}</div>
           `;
           container.appendChild(div);
         }

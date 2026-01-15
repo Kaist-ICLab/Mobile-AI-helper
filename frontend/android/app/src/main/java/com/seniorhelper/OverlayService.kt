@@ -29,7 +29,9 @@ import android.os.Looper
 import android.text.InputType
 import android.util.DisplayMetrics
 import android.util.Log
+import android.util.TypedValue
 import android.view.Gravity
+import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
@@ -64,7 +66,6 @@ class OverlayService : Service() {
 
     // SERVER URLS
     private val HTTP_SERVER_URL = "https://mobile-woz-agent.iclab.dev"
-    // private val HTTP_SERVER_URL = "http://172.20.60.24:8000"
     // ==================== VARIABLES ====================
     private lateinit var windowManager: WindowManager
     private var bubbleView: View? = null
@@ -100,8 +101,12 @@ class OverlayService : Service() {
     // Store UI references for visibility toggling
     private lateinit var controlsLayout: LinearLayout
     private lateinit var minimizeButton: ImageButton
+    private lateinit var repeatButton: ImageButton
     private lateinit var topResizeHandle: View
     private lateinit var bottomResizeHandle: View
+
+    // Last user message for repeat functionality
+    private var lastUserMessage: String? = null
 
     // Resize threshold in pixels (calculated from dp)
     private var resizeThresholdPx = 0
@@ -264,6 +269,7 @@ class OverlayService : Service() {
         }
         bubbleLayout.addView(iconView)
 
+        @Suppress("DEPRECATION")
         val layoutParams = WindowManager.LayoutParams(
             160, 160, // Width, Height
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
@@ -307,7 +313,10 @@ class OverlayService : Service() {
                         return true
                     }
                     MotionEvent.ACTION_UP -> {
-                        if (!isDragging) toggleChatWindow()
+                        if (!isDragging) {
+                            bubbleLayout.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                            toggleChatWindow()
+                        }
                         return true
                     }
                 }
@@ -375,6 +384,22 @@ class OverlayService : Service() {
             setTypeface(null, android.graphics.Typeface.BOLD)
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
+        repeatButton = ImageButton(this).apply {
+            setImageResource(android.R.drawable.ic_menu_rotate)
+            setBackgroundColor(Color.TRANSPARENT)
+            setColorFilter(Color.WHITE)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { setMargins(8, 0, 8, 0) }
+            setOnClickListener {
+                performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                repeatLastMessage()
+            }
+            // Initially disabled until user sends a message
+            isEnabled = false
+            alpha = 0.3f
+        }
         minimizeButton = ImageButton(this).apply {
             setImageResource(android.R.drawable.ic_menu_upload)
             setBackgroundColor(Color.TRANSPARENT)
@@ -382,16 +407,23 @@ class OverlayService : Service() {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { setMargins(16, 0, 16, 0) }
-            setOnClickListener { toggleMinimize() }
+            ).apply { setMargins(8, 0, 8, 0) }
+            setOnClickListener {
+                performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                toggleMinimize()
+            }
         }
         val closeButton = ImageButton(this).apply {
             setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
             setBackgroundColor(Color.TRANSPARENT)
             setColorFilter(Color.WHITE)
-            setOnClickListener { hideChatWindow() }
+            setOnClickListener {
+                performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                hideChatWindow()
+            }
         }
         topRow.addView(titleText)
+        topRow.addView(repeatButton)
         topRow.addView(minimizeButton)
         topRow.addView(closeButton)
 
@@ -462,7 +494,10 @@ class OverlayService : Service() {
             setColorFilter(Color.WHITE)
             scaleType = ImageView.ScaleType.FIT_CENTER
             setPadding(40, 40, 40, 40)
-            setOnClickListener { if (!isRecording) startRecording() else stopRecording() }
+            setOnClickListener {
+                performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                if (!isRecording) startRecording() else stopRecording()
+            }
         }
         controlsLayout.addView(micButton)
 
@@ -509,6 +544,7 @@ class OverlayService : Service() {
         chatLayout.addView(controlsLayout)
         chatLayout.addView(bottomResizeHandle)
 
+        @Suppress("DEPRECATION")
         chatLayoutParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT, currentChatHeight,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY else WindowManager.LayoutParams.TYPE_PHONE,
@@ -577,6 +613,76 @@ class OverlayService : Service() {
         }
     }
 
+    private fun repeatLastMessage() {
+        val message = lastUserMessage
+        if (message.isNullOrEmpty()) {
+            Log.w(TAG, "No message to repeat")
+            return
+        }
+
+        // Show highlighted message with confirmation
+        clearMessage()
+        val confirmationRow = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setPadding(0, 10, 0, 10)
+        }
+
+        // Original message with highlight
+        val messageText = TextView(this).apply {
+            text = message
+            textSize = 34f
+            setTextColor(Color.WHITE)
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = 35f
+                setColor(0xFFFF9800.toInt())  // Orange highlight for repeat
+            }
+            setPadding(40, 35, 40, 35)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+
+        // Confirmation indicator
+        val confirmText = TextView(this).apply {
+            text = "✓ 다시 보냈습니다"
+            textSize = 20f
+            setTextColor(0xFF4CAF50.toInt())  // Green
+            setPadding(0, 10, 0, 0)
+        }
+
+        val icon = createIcon(android.R.drawable.ic_menu_myplaces)
+        val messageRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+        }
+        messageRow.addView(messageText)
+        messageRow.addView(icon)
+
+        confirmationRow.addView(messageRow)
+        confirmationRow.addView(confirmText)
+        messagesContainer.addView(confirmationRow)
+        currentMessageView = confirmationRow
+
+        // Resend to wizard
+        wizardClient?.sendMessage(message)
+
+        // Smart TTS: short messages get read, long messages get confirmation only
+        val ttsMessage = if (message.length < 20) {
+            "다시 보냈습니다: $message"
+        } else {
+            "다시 보냈습니다"
+        }
+        clovaTTS(ttsMessage)
+
+        // Scroll to show
+        messagesScroll.post { messagesScroll.fullScroll(View.FOCUS_DOWN) }
+
+        Log.i(TAG, "Repeated message: $message")
+    }
+
     private fun createResizeListener(isTop: Boolean): View.OnTouchListener {
         return object : View.OnTouchListener {
             override fun onTouch(v: View?, event: MotionEvent): Boolean {
@@ -625,6 +731,14 @@ class OverlayService : Service() {
 
     private fun showUserMessage(message: String) {
         clearMessage()
+
+        // Track last user message and enable repeat button
+        lastUserMessage = message
+        if (::repeatButton.isInitialized) {
+            repeatButton.isEnabled = true
+            repeatButton.alpha = 1.0f
+        }
+
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER
         }
@@ -733,6 +847,7 @@ class OverlayService : Service() {
                 mainHandler.postDelayed({ showLoadingBubbles(); wizardClient?.sendMessage(text) }, 1000)
             } else {
                 showUserMessage("다시 말씀해주세요.")
+                clovaTTS("다시 말씀해주세요.")
             }
         }
     }
@@ -755,7 +870,7 @@ class OverlayService : Service() {
 
                 if (conn.responseCode == 200) {
                     val response = conn.inputStream.bufferedReader().readText()
-                    val text = JSONObject(response).optString("text", null)
+                    val text = JSONObject(response).optString("text", "").ifEmpty { null }
                     callback(text)
                 } else {
                     val err = conn.errorStream?.bufferedReader()?.readText()
@@ -799,19 +914,19 @@ class OverlayService : Service() {
         val totalAudioLen = totalDataLen + 36
         val header = ByteArray(44)
 
-        header[0] = 'R'.toByte(); header[1] = 'I'.toByte(); header[2] = 'F'.toByte(); header[3] = 'F'.toByte()
+        header[0] = 'R'.code.toByte(); header[1] = 'I'.code.toByte(); header[2] = 'F'.code.toByte(); header[3] = 'F'.code.toByte()
         header[4] = (totalAudioLen and 0xff).toByte()
         header[5] = (totalAudioLen shr 8 and 0xff).toByte()
         header[6] = (totalAudioLen shr 16 and 0xff).toByte()
         header[7] = (totalAudioLen shr 24 and 0xff).toByte()
-        header[8] = 'W'.toByte(); header[9] = 'A'.toByte(); header[10] = 'V'.toByte(); header[11] = 'E'.toByte()
-        header[12] = 'f'.toByte(); header[13] = 'm'.toByte(); header[14] = 't'.toByte(); header[15] = ' '.toByte()
+        header[8] = 'W'.code.toByte(); header[9] = 'A'.code.toByte(); header[10] = 'V'.code.toByte(); header[11] = 'E'.code.toByte()
+        header[12] = 'f'.code.toByte(); header[13] = 'm'.code.toByte(); header[14] = 't'.code.toByte(); header[15] = ' '.code.toByte()
         header[16] = 16; header[17] = 0; header[18] = 0; header[19] = 0; header[20] = 1; header[21] = 0
         header[22] = 1; header[23] = 0; header[24] = (16000 and 0xff).toByte(); header[25] = (16000 shr 8 and 0xff).toByte()
         header[26] = (16000 shr 16 and 0xff).toByte(); header[27] = (16000 shr 24 and 0xff).toByte(); header[28] = (bitrate and 0xff).toByte()
         header[29] = (bitrate shr 8 and 0xff).toByte(); header[30] = (bitrate shr 16 and 0xff).toByte(); header[31] = (bitrate shr 24 and 0xff).toByte()
-        header[32] = 2; header[33] = 0; header[34] = 16; header[35] = 0; header[36] = 'd'.toByte(); header[37] = 'a'.toByte()
-        header[38] = 't'.toByte(); header[39] = 'a'.toByte(); header[40] = (totalDataLen and 0xff).toByte(); header[41] = (totalDataLen shr 8 and 0xff).toByte()
+        header[32] = 2; header[33] = 0; header[34] = 16; header[35] = 0; header[36] = 'd'.code.toByte(); header[37] = 'a'.code.toByte()
+        header[38] = 't'.code.toByte(); header[39] = 'a'.code.toByte(); header[40] = (totalDataLen and 0xff).toByte(); header[41] = (totalDataLen shr 8 and 0xff).toByte()
         header[42] = (totalDataLen shr 16 and 0xff).toByte(); header[43] = (totalDataLen shr 24 and 0xff).toByte()
 
         return header + pcmData
@@ -930,7 +1045,7 @@ class OverlayService : Service() {
             text = bodyKo
             textSize = 34f
             setTextColor(0xFF4E342E.toInt()) // Dark brown
-            lineHeight = (38 * resources.displayMetrics.scaledDensity).toInt()
+            lineHeight = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 38f, resources.displayMetrics).toInt()
         }
 
         cardLayout.addView(stepIndicator)
