@@ -105,8 +105,8 @@ class OverlayService : Service() {
     private lateinit var topResizeHandle: View
     private lateinit var bottomResizeHandle: View
 
-    // Last user message for repeat functionality
-    private var lastUserMessage: String? = null
+    // Last assistant message for repeat functionality
+    private var lastAssistantMessage: String? = null
 
     // Resize threshold in pixels (calculated from dp)
     private var resizeThresholdPx = 0
@@ -387,7 +387,7 @@ class OverlayService : Service() {
         repeatButton = ImageButton(this).apply {
             setImageResource(android.R.drawable.ic_menu_rotate)
             setBackgroundColor(Color.TRANSPARENT)
-            setColorFilter(Color.WHITE)
+            setColorFilter(0xFFFFFFFF.toInt(), android.graphics.PorterDuff.Mode.SRC_IN)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -396,14 +396,14 @@ class OverlayService : Service() {
                 performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                 repeatLastMessage()
             }
-            // Initially disabled until user sends a message
+            // Initially disabled until assistant sends a message
             isEnabled = false
             alpha = 0.3f
         }
         minimizeButton = ImageButton(this).apply {
             setImageResource(android.R.drawable.ic_menu_upload)
             setBackgroundColor(Color.TRANSPARENT)
-            setColorFilter(Color.WHITE)
+            setColorFilter(0xFFFFFFFF.toInt(), android.graphics.PorterDuff.Mode.SRC_IN)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -614,73 +614,16 @@ class OverlayService : Service() {
     }
 
     private fun repeatLastMessage() {
-        val message = lastUserMessage
+        val message = lastAssistantMessage
         if (message.isNullOrEmpty()) {
             Log.w(TAG, "No message to repeat")
             return
         }
 
-        // Show highlighted message with confirmation
-        clearMessage()
-        val confirmationRow = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER
-            setPadding(0, 10, 0, 10)
-        }
+        // Just replay the TTS
+        clovaTTS(message)
 
-        // Original message with highlight
-        val messageText = TextView(this).apply {
-            text = message
-            textSize = 34f
-            setTextColor(Color.WHITE)
-            background = GradientDrawable().apply {
-                shape = GradientDrawable.RECTANGLE
-                cornerRadius = 35f
-                setColor(0xFFFF9800.toInt())  // Orange highlight for repeat
-            }
-            setPadding(40, 35, 40, 35)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
-
-        // Confirmation indicator
-        val confirmText = TextView(this).apply {
-            text = "✓ 다시 보냈습니다"
-            textSize = 20f
-            setTextColor(0xFF4CAF50.toInt())  // Green
-            setPadding(0, 10, 0, 0)
-        }
-
-        val icon = createIcon(android.R.drawable.ic_menu_myplaces)
-        val messageRow = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
-        }
-        messageRow.addView(messageText)
-        messageRow.addView(icon)
-
-        confirmationRow.addView(messageRow)
-        confirmationRow.addView(confirmText)
-        messagesContainer.addView(confirmationRow)
-        currentMessageView = confirmationRow
-
-        // Resend to wizard
-        wizardClient?.sendMessage(message)
-
-        // Smart TTS: short messages get read, long messages get confirmation only
-        val ttsMessage = if (message.length < 20) {
-            "다시 보냈습니다: $message"
-        } else {
-            "다시 보냈습니다"
-        }
-        clovaTTS(ttsMessage)
-
-        // Scroll to show
-        messagesScroll.post { messagesScroll.fullScroll(View.FOCUS_DOWN) }
-
-        Log.i(TAG, "Repeated message: $message")
+        Log.i(TAG, "Repeated assistant message: $message")
     }
 
     private fun createResizeListener(isTop: Boolean): View.OnTouchListener {
@@ -731,14 +674,6 @@ class OverlayService : Service() {
 
     private fun showUserMessage(message: String) {
         clearMessage()
-
-        // Track last user message and enable repeat button
-        lastUserMessage = message
-        if (::repeatButton.isInitialized) {
-            repeatButton.isEnabled = true
-            repeatButton.alpha = 1.0f
-        }
-
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER
         }
@@ -757,6 +692,14 @@ class OverlayService : Service() {
 
     private fun showAssistantResponse(message: String) {
         clearMessage()
+
+        // Store last assistant message and enable repeat button
+        lastAssistantMessage = message
+        if (::repeatButton.isInitialized) {
+            repeatButton.isEnabled = true
+            repeatButton.alpha = 1.0f
+        }
+
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER
         }
@@ -1058,6 +1001,13 @@ class OverlayService : Service() {
 
         // Scroll to top to show tutorial
         messagesScroll.post { messagesScroll.smoothScrollTo(0, 0) }
+
+        // Store tutorial body for repeat functionality and enable repeat button
+        lastAssistantMessage = bodyKo
+        if (::repeatButton.isInitialized) {
+            repeatButton.isEnabled = true
+            repeatButton.alpha = 1.0f
+        }
 
         // Speak the tutorial body in Korean
         clovaTTS(bodyKo)
