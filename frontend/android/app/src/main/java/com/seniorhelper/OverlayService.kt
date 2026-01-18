@@ -108,6 +108,9 @@ class OverlayService : Service() {
     // Last assistant message for repeat functionality
     private var lastAssistantMessage: String? = null
 
+    // Current MediaPlayer for TTS (to stop when mic clicked)
+    private var currentMediaPlayer: MediaPlayer? = null
+
     // Resize threshold in pixels (calculated from dp)
     private var resizeThresholdPx = 0
 
@@ -115,6 +118,8 @@ class OverlayService : Service() {
     private var wizardClient: WizardConsoleClient? = null
     private val sessionId = generateSessionId()
     private val mainHandler = Handler(Looper.getMainLooper())
+    private var wizardSocketConnected: Boolean = false
+    private var sessionPaired: Boolean = false
 
     // Audio Recording
     private var recorder: AudioRecord? = null
@@ -154,7 +159,6 @@ class OverlayService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // --- HANDLE COMMANDS FROM MAIN ACTIVITY ---
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -245,15 +249,18 @@ class OverlayService : Service() {
                     }
                 }
             },
-            onConnectionStatusChanged = { isConnected ->
+            onConnectionStatusChanged = { _ ->
                 mainHandler.post {
                     if(::sessionIdText.isInitialized) {
-                        sessionIdText.setTextColor(if (isConnected) 0xFF4CAF50.toInt() else 0xFFE57373.toInt())
+                        // Keep white regardless of connection status
+                        sessionIdText.setTextColor(Color.WHITE)
                     }
                 }
             }
         )
         wizardClient?.connect()
+        // Send a startup event so the backend registers this session immediately
+        wizardClient?.sendEvent("phone_ready")
     }
 
     private fun showBubble() {
@@ -430,7 +437,8 @@ class OverlayService : Service() {
         sessionIdText = TextView(this).apply {
             text = "Session: $sessionId"
             textSize = 14f
-            setTextColor(0xFFE3F2FD.toInt())
+            // Always white per request
+            setTextColor(Color.WHITE)
         }
         headerLayout.addView(topRow)
         headerLayout.addView(sessionIdText)
@@ -620,7 +628,6 @@ class OverlayService : Service() {
             return
         }
 
-        // Just replay the TTS
         clovaTTS(message)
 
         Log.i(TAG, "Repeated assistant message: $message")
@@ -691,6 +698,11 @@ class OverlayService : Service() {
     }
 
     private fun showAssistantResponse(message: String) {
+        // Hide tutorial if visible when wizard sends a regular message
+        if (isTutorialVisible) {
+            hideTutorialCard()
+        }
+
         clearMessage()
 
         // Store last assistant message and enable repeat button
@@ -751,6 +763,8 @@ class OverlayService : Service() {
                 isRecording = true
                 mainHandler.post {
                     updateMicButton(true)
+                    // Stop any TTS that's currently playing
+                    stopCurrentAudio()
                     // Hide tutorial when user starts speaking
                     if (isTutorialVisible) {
                         hideTutorialCard()
@@ -787,7 +801,7 @@ class OverlayService : Service() {
             updateMicButton(false)
             if (!text.isNullOrEmpty()) {
                 showUserMessage(text)
-                mainHandler.postDelayed({ showLoadingBubbles(); wizardClient?.sendMessage(text) }, 1000)
+                mainHandler.post({ showLoadingBubbles(); wizardClient?.sendMessage(text) })
             } else {
                 showUserMessage("다시 말씀해주세요.")
                 clovaTTS("다시 말씀해주세요.")
@@ -877,14 +891,34 @@ class OverlayService : Service() {
 
     private fun playAudio(audioBytes: ByteArray) {
         try {
+            // Stop any currently playing audio
+            stopCurrentAudio()
+
             val tempFile = File.createTempFile("tts", ".mp3", cacheDir)
             tempFile.writeBytes(audioBytes)
             val mp = MediaPlayer()
+            currentMediaPlayer = mp
             mp.setDataSource(tempFile.absolutePath)
             mp.setOnPreparedListener { it.start() }
-            mp.setOnCompletionListener { it.release(); tempFile.delete() }
+            mp.setOnCompletionListener {
+                it.release()
+                tempFile.delete()
+                if (currentMediaPlayer == it) currentMediaPlayer = null
+            }
             mp.prepareAsync()
         } catch (e: Exception) { Log.e(TAG, "Play Error", e) }
+    }
+
+    private fun stopCurrentAudio() {
+        try {
+            currentMediaPlayer?.let {
+                if (it.isPlaying) it.stop()
+                it.release()
+            }
+            currentMediaPlayer = null
+        } catch (e: Exception) {
+            Log.e(TAG, "Error stopping audio", e)
+        }
     }
 
     // ==================== TUTORIAL SYSTEM ====================
@@ -893,28 +927,49 @@ class OverlayService : Service() {
         try {
             // Try to parse as JSON
             val json = JSONObject(text)
-            if (json.optString("type") == "tutorial") {
-                val action = json.optString("action", "")
-                val step = json.optInt("step", 0)
-                val total = json.optInt("total", 0)
-                val titleKo = json.optString("title_ko", "도움말")
-                val bodyKo = json.optString("body_ko", "")
+            val messageType = json.optString("type", "")
 
-                Log.d(TAG, "Tutorial command: action=$action, step=$step, total=$total")
+            when (messageType) {
+                "tutorial" -> {
+                    val action = json.optString("action", "")
+                    val step = json.optInt("step", 0)
+                    val total = json.optInt("total", 0)
+                    val titleKo = json.optString("title_ko", "도움말")
+                    val bodyKo = json.optString("body_ko", "")
 
-                when (action) {
-                    "show", "update", "next" -> {
-                        showTutorialCard(step, total, titleKo, bodyKo)
+                    Log.d(TAG, "Tutorial command: action=$action, step=$step, total=$total")
+
+                    when (action) {
+                        "show", "update", "next" -> {
+                            showTutorialCard(step, total, titleKo, bodyKo)
+                        }
+                        "hide" -> {
+                            hideTutorialCard()
+                        }
                     }
-                    "hide" -> {
-                        hideTutorialCard()
-                    }
+                    return
                 }
-                return
+                "choices" -> {
+                    val prompt = json.optString("prompt", "선택해주세요")
+                    val optionsArray = json.optJSONArray("options")
+                    val options = mutableListOf<String>()
+                    if (optionsArray != null) {
+                        for (i in 0 until optionsArray.length()) {
+                            options.add(optionsArray.getString(i))
+                        }
+                    }
+
+                    Log.d(TAG, "Choices command: prompt=$prompt, options=$options")
+
+                    if (options.isNotEmpty()) {
+                        showChoicesContainer(prompt, options)
+                    }
+                    return
+                }
             }
         } catch (e: Exception) {
-            // Not valid JSON or not a tutorial command - treat as normal message
-            Log.d(TAG, "Not a tutorial command, treating as normal message")
+            // Not valid JSON - treat as normal message
+            Log.d(TAG, "Not a JSON command, treating as normal message")
         }
 
         // Fall back to normal assistant response
@@ -995,11 +1050,9 @@ class OverlayService : Service() {
         cardLayout.addView(titleView)
         cardLayout.addView(bodyView)
 
-        // Add to messages container (insert at top)
         messagesContainer.addView(cardLayout, 0)
         tutorialCardView = cardLayout
 
-        // Scroll to top to show tutorial
         messagesScroll.post { messagesScroll.smoothScrollTo(0, 0) }
 
         // Store tutorial body for repeat functionality and enable repeat button
@@ -1017,6 +1070,9 @@ class OverlayService : Service() {
 
     private fun hideTutorialCard() {
         if (!::messagesContainer.isInitialized) return
+
+        // Stop TTS when tutorial is hidden
+        stopCurrentAudio()
 
         tutorialCardView?.let {
             messagesContainer.removeView(it)
@@ -1036,5 +1092,113 @@ class OverlayService : Service() {
         tutorialBodyKo = ""
 
         Log.i(TAG, "Tutorial card hidden, screen cleared")
+    }
+
+    // ==================== CHOICES CONTAINER ====================
+
+    private var choicesContainerView: View? = null
+
+    private fun showChoicesContainer(prompt: String, options: List<String>) {
+        if (!::messagesContainer.isInitialized) {
+            Log.w(TAG, "Messages container not initialized")
+            return
+        }
+
+        if (isTutorialVisible) {
+            hideTutorialCard()
+        }
+
+        // Remove existing choices container if present
+        choicesContainerView?.let { messagesContainer.removeView(it) }
+
+        // Clear previous messages
+        clearMessage()
+
+        val cardLayout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = 30f
+                setColor(0xFFFFFFFF.toInt()) // White background
+                setStroke(4, 0xFF42A5F5.toInt()) // Blue border
+            }
+            setPadding(30, 30, 30, 30)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(10, 10, 10, 10)
+            }
+        }
+
+        // Prompt text
+        val promptView = TextView(this).apply {
+            text = prompt
+            textSize = 28f
+            setTextColor(0xFF1565C0.toInt())
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            gravity = Gravity.CENTER
+            setPadding(0, 0, 0, 20)
+        }
+        cardLayout.addView(promptView)
+
+        // Create buttons for each option
+        options.forEachIndexed { index, option ->
+            val optionButton = TextView(this).apply {
+                text = "${index + 1}. $option"
+                textSize = 30f
+                setTextColor(0xFF1565C0.toInt())
+                background = GradientDrawable().apply {
+                    shape = GradientDrawable.RECTANGLE
+                    cornerRadius = 20f
+                    setColor(0xFFE3F2FD.toInt()) // Light blue
+                    setStroke(2, 0xFF90CAF9.toInt())
+                }
+                setPadding(30, 25, 30, 25)
+                gravity = Gravity.CENTER
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    setMargins(0, 8, 0, 8)
+                }
+
+                setOnClickListener {
+                    performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                    onChoiceSelected(option)
+                }
+            }
+            cardLayout.addView(optionButton)
+        }
+
+        // Add to messages container
+        messagesContainer.addView(cardLayout)
+        choicesContainerView = cardLayout
+
+        lastAssistantMessage = prompt
+        if (::repeatButton.isInitialized) {
+            repeatButton.isEnabled = true
+            repeatButton.alpha = 1.0f
+        }
+
+        messagesScroll.post { messagesScroll.fullScroll(View.FOCUS_DOWN) }
+
+        clovaTTS(prompt)
+
+        Log.i(TAG, "Choices container shown: $prompt with ${options.size} options")
+    }
+
+    private fun onChoiceSelected(selectedOption: String) {
+        choicesContainerView?.let {
+            messagesContainer.removeView(it)
+            choicesContainerView = null
+        }
+
+        val confirmationMessage = "${selectedOption}을(를) 선택하셨어요"
+        showAssistantResponse(confirmationMessage)
+
+        // Send selection back to wizard
+        wizardClient?.sendMessage("User selected: $selectedOption")
+        Log.i(TAG, "User selected: $selectedOption")
     }
 }

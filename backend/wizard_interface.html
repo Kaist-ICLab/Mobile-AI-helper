@@ -64,14 +64,43 @@
       box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
 
-    /* RIGHT: FREQUENT RESPONSES */
+    /* RIGHT: TOOLS COLUMNS - TWO PANEL LAYOUT */
+    .tools-wrapper {
+      flex: 1.5;
+      display: flex;
+      gap: 10px;
+    }
+
+    .tools-left-panel {
+      flex: 1;
+      background: white;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      padding: 15px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .tools-right-panel {
+      flex: 1;
+      background: white;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      padding: 15px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    /* Legacy class for backward compatibility */
     .frequent-responses-column {
       flex: 1;
       background: white;
       border-radius: 10px;
       display: flex;
       flex-direction: column;
-      overflow: hidden;
+      overflow-y: auto;
       padding: 15px;
       box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
@@ -175,7 +204,7 @@
       background-color: #fff;
     }
 
-    #responsesContainer { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 5px; }
+    #responsesContainer { display: flex; flex-direction: column; gap: 10px; padding-right: 5px; }
 
     .frequent-response {
       padding: 15px;
@@ -309,6 +338,264 @@
     .tutorial-title { font-weight: bold; color: #6D4C41; margin-bottom: 5px; }
     .tutorial-body { color: #4E342E; line-height: 1.4; }
     .tutorial-action { font-size: 10px; color: #999; margin-top: 5px; font-style: italic; }
+
+    /* ==================== CHOICES HELPER UI ==================== */
+    .choices-helper {
+      margin-bottom: 15px;
+      padding: 15px;
+      background: #E8F5E9;
+      border: 2px solid #4CAF50;
+      border-radius: 8px;
+    }
+    .choices-helper h4 {
+      margin: 0 0 12px 0;
+      color: #2E7D32;
+      font-size: 16px;
+    }
+    .choices-helper label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #2E7D32;
+      margin: 8px 0 4px 0;
+    }
+    .choices-helper select,
+    .choices-helper input,
+    .choices-helper textarea {
+      width: 100%;
+      padding: 8px;
+      border: 2px solid #81C784;
+      border-radius: 5px;
+      font-size: 14px;
+      font-family: inherit;
+      background: white;
+    }
+    .choices-helper select:focus,
+    .choices-helper input:focus,
+    .choices-helper textarea:focus {
+      outline: none;
+      border-color: #4CAF50;
+    }
+    .choices-helper textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+    .choices-template-section {
+      background: #C8E6C9;
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+    .choices-template-section label {
+      color: #1B5E20;
+    }
+    .choices-divider {
+      height: 1px;
+      background: #81C784;
+      margin: 12px 0;
+    }
+    .choices-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .choices-buttons button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .choices-buttons .send-btn {
+      background: #4CAF50;
+      color: white;
+    }
+    .choices-buttons .send-btn:hover { background: #388E3C; }
+    .choices-buttons .save-btn {
+      background: #2196F3;
+      color: white;
+    }
+    .choices-buttons .save-btn:hover { background: #1976D2; }
+    .choices-buttons button:disabled {
+      background: #ccc;
+      color: #999;
+      cursor: not-allowed;
+    }
+    .choices-helper .helper-hint {
+      font-size: 11px;
+      color: #558B2F;
+      margin-top: 8px;
+    }
+
+    /* ==================== TASK FLOWS PANEL ==================== */
+    .task-flows-panel {
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .task-flows-panel h4 {
+      margin: 0 0 12px 0;
+      color: #1565C0;
+      font-size: 16px;
+    }
+    .task-flows-selectors {
+      background: #E3F2FD;
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      border: 1px solid #90CAF9;
+    }
+    .task-flows-panel label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #1565C0;
+      margin: 8px 0 4px 0;
+    }
+    .task-flows-panel label:first-child {
+      margin-top: 0;
+    }
+    .task-flows-panel select {
+      width: 100%;
+      padding: 8px;
+      border: 2px solid #64B5F6;
+      border-radius: 5px;
+      font-size: 14px;
+      font-family: inherit;
+      background: white;
+    }
+    .task-flows-panel select:focus {
+      outline: none;
+      border-color: #1976D2;
+    }
+    .task-steps-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1;
+      overflow-y: auto;
+      min-height: 300px;
+    }
+    .task-step-row {
+      background: #E3F2FD;
+      border: 1px solid #90CAF9;
+      border-radius: 6px;
+      padding: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .task-step-row:hover {
+      background: #BBDEFB;
+      border-color: #64B5F6;
+    }
+    .task-step-row.selected {
+      background: #FFECB3;
+      border-color: #FFB300;
+    }
+    .task-step-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    .task-step-number {
+      font-weight: bold;
+      color: #1565C0;
+      font-size: 13px;
+    }
+    .task-step-title {
+      font-size: 12px;
+      color: #1976D2;
+      margin-left: 8px;
+      flex: 1;
+    }
+    .task-step-edit-btn {
+      background: #1976D2;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 4px 10px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: bold;
+    }
+    .task-step-edit-btn:hover {
+      background: #1565C0;
+    }
+    .task-step-say {
+      font-size: 14px;
+      color: #000000;
+      line-height: 1.4;
+      margin-top: 6px;
+      padding: 6px 8px;
+      background: white;
+      border-radius: 4px;
+    }
+    /* Edit mode for step */
+    .task-step-row.editing {
+      background: #FFF8E1;
+      border-color: #FFB300;
+    }
+    .task-step-edit-area {
+      display: none;
+      margin-top: 8px;
+    }
+    .task-step-row.editing .task-step-edit-area {
+      display: block;
+    }
+    .task-step-row.editing .task-step-say {
+      display: none;
+    }
+    .task-step-edit-area textarea {
+      width: 100%;
+      padding: 8px;
+      border: 2px solid #FFB300;
+      border-radius: 5px;
+      font-size: 14px;
+      font-family: inherit;
+      min-height: 80px;
+      resize: vertical;
+    }
+    .task-step-edit-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .task-step-save-btn {
+      flex: 1;
+      padding: 8px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .task-step-save-btn:hover {
+      background: #388E3C;
+    }
+    .task-step-cancel-btn {
+      flex: 1;
+      padding: 8px;
+      background: #9E9E9E;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .task-step-cancel-btn:hover {
+      background: #757575;
+    }
+    .task-flows-hint {
+      font-size: 11px;
+      color: #1976D2;
+      margin-top: 10px;
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
@@ -316,7 +603,7 @@
     <h1>🧙‍♂️ Wizard Console</h1>
     <div class="session-controls">
       <input type="text" id="sessionIdInput" placeholder="Session ID" maxlength="4" />
-      <button onclick="connectToSession()">Connect</button>
+      <button id="connectBtn" onclick="connectToSession()">Connect</button>
     </div>
   </div>
 
@@ -348,39 +635,108 @@
       </div>
     </div>
 
-    <div class="frequent-responses-column">
-      <!-- Tutorial Controls -->
-      <div class="tutorial-controls">
-        <h4>📚 Tutorial Controls</h4>
-        <select id="tutorialStepSelect" onchange="onStepSelected()" style="white-space: normal; height: auto; min-height: 36px;">
-          <option value="1">1. 안녕하세요! 저는 당신이 휴대폰을 편하게 사용할 수 있도록 도와주는 AI입니다.</option>
-          <option value="2">2. 휴대폰으로 하시고 싶으신 일이 있으시다면 오른쪽 아래의 마이크 버튼을 누르고 말씀해주세요. 다 말씀하셨다면 마이크 버튼을 다시 눌러주세요.</option>
-          <option value="3">3. 요청하신 내용을 제가 제대로 이해했는지 확인한 이후에, 휴대폰 사용을 도와드릴게요.</option>
-          <option value="4">4. 가끔, 사용자분께 직접 휴대폰 조작하셔야 할 때가 있어요. 그럴 때는, 제가 "어디를 누르세요"라고 말씀드릴게요.</option>
-          <option value="5">5. 혹시나 헷갈리거나 이해가 안되는 내용이 있으시면, 제게 말씀해주시면 안내드리겠습니다.</option>
-          <option value="6">6. 상단의 반복 버튼을 누르면 제가 말씀 드린 내용을 다시 들을 수 있어요.</option>
-          <option value="7">7. 창 이동: 만약 이 대화창을 옮기고 싶으시면, 위쪽의 파란 부분을 누른 채로 위아래로 끌어서 움직이시면 됩니다.</option>
-        </select>
-        <button onclick="showSelectedStep()" id="showStepBtn">Show Selected Step</button>
-        <button onclick="hideTutorial()" id="hideTutorialBtn" disabled>Hide Tutorial</button>
-        <div class="tutorial-step-indicator" id="tutorialStepIndicator"></div>
+    <!-- TWO-PANEL TOOLS WRAPPER -->
+    <div class="tools-wrapper">
+      <!-- LEFT PANEL: Tutorial + Choices + Frequent Responses -->
+      <div class="tools-left-panel">
+        <!-- Tutorial Controls -->
+        <div class="tutorial-controls">
+          <h4>📚 Tutorial Controls</h4>
+          <select id="tutorialStepSelect" onchange="onStepSelected()" style="white-space: normal; height: auto; min-height: 36px;">
+            <option value="1">1. 안녕하세요! 저는 당신이 휴대폰을 편하게 사용할 수 있도록 도와주는 AI입니다.</option>
+            <option value="2">2. 휴대폰으로 하시고 싶으신 일이 있으시다면 오른쪽 아래의 마이크 버튼을 누르고 말씀해주세요. 다 말씀하셨다면 마이크 버튼을 다시 눌러주세요.</option>
+            <option value="3">3. 요청하신 내용을 제가 제대로 이해했는지 확인한 이후에, 휴대폰 사용을 도와드릴게요.</option>
+            <option value="4">4. 가끔, 사용자분께 직접 휴대폰 조작하셔야 할 때가 있어요. 그럴 때는, 제가 "어디를 누르세요"라고 말씀드릴게요.</option>
+            <option value="5">5. 혹시나 헷갈리거나 이해가 안되는 내용이 있으시면, 제게 말씀해주시면 안내드리겠습니다.</option>
+            <option value="6">6. 상단의 반복 버튼을 누르면 제가 말씀 드린 내용을 다시 들을 수 있어요.</option>
+            <option value="7">7. 창 이동: 만약 이 대화창을 옮기고 싶으시면, 위쪽의 파란 부분을 누른 채로 위아래로 끌어서 움직이시면 됩니다.</option>
+          </select>
+          <button onclick="showSelectedStep()" id="showStepBtn">Show Selected Step</button>
+          <button onclick="hideTutorial()" id="hideTutorialBtn" disabled>Hide Tutorial</button>
+          <div class="tutorial-step-indicator" id="tutorialStepIndicator"></div>
+        </div>
+
+        <!-- Choices Helper - Consolidated -->
+        <div class="choices-helper">
+          <h4>📋 Send Choices</h4>
+
+          <!-- Category & Template Selection -->
+          <div class="choices-template-section">
+            <label>Category:</label>
+            <select id="choicesCategorySelect" onchange="onCategorySelected()">
+              <option value="">(Select category)</option>
+            </select>
+
+            <label>Template:</label>
+            <select id="choicesTemplateSelect" onchange="onTemplateSelected()">
+              <option value="">(Select template)</option>
+            </select>
+          </div>
+
+          <div class="choices-divider"></div>
+
+          <!-- Prompt & Options -->
+          <label>Prompt:</label>
+          <input type="text" id="choicesPrompt"/>
+
+          <label>Options (one per line):</label>
+          <textarea id="choicesOptions"></textarea>
+
+          <!-- Action Buttons -->
+          <div class="choices-buttons">
+            <button onclick="sendChoices()" id="sendChoicesBtn" class="send-btn">Send to User</button>
+            <button onclick="saveCurrentTemplate()" id="saveTemplateBtn" class="save-btn">Save Template</button>
+          </div>
+
+          <div class="helper-hint">Select a template to edit, or fill in manually. "Save Template" updates the selected template.</div>
+        </div>
+
+        <!-- Frequent Responses -->
+        <div class="frequent-responses-header">
+          <h3>⚡ Frequent Responses</h3>
+          <div style="display:flex; gap:8px;">
+            <button class="add-response-btn" onclick="openAddResponseModal()">+ New Response</button>
+            <button class="add-response-btn secondary" onclick="openAddClassificationModal()">+ Category</button>
+          </div>
+        </div>
+
+        <div class="classification-filter">
+          <select id="classificationFilter" onchange="filterFrequentResponses()">
+            <option value="">All Categories</option>
+          </select>
+        </div>
+
+        <div id="responsesContainer"></div>
       </div>
 
-      <div class="frequent-responses-header">
-        <h3>⚡ Frequent Responses</h3>
-        <div style="display:flex; gap:8px;">
-          <button class="add-response-btn" onclick="openAddResponseModal()">+ New Response</button>
-          <button class="add-response-btn secondary" onclick="openAddClassificationModal()">+ Category</button>
+      <!-- RIGHT PANEL: Task Flows -->
+      <div class="tools-right-panel">
+        <div class="task-flows-panel">
+          <h4>🧭 Task Flows</h4>
+
+          <div class="task-flows-selectors">
+            <label>Category:</label>
+            <select id="taskFlowsCategorySelect" onchange="onTaskFlowsCategorySelected()">
+              <option value="">(Select category)</option>
+            </select>
+
+            <label>Task:</label>
+            <select id="taskFlowsTaskSelect" onchange="onTaskFlowsTaskSelected()">
+              <option value="">(Select task)</option>
+            </select>
+          </div>
+
+          <div class="task-steps-list" id="taskStepsList">
+            <div style="text-align:center; color:#999; padding:20px;">
+              Select a category and task to view steps
+            </div>
+          </div>
+
+          <div class="task-flows-hint">
+            Click a step to copy message to input box. Click "Edit" to modify and save.
+          </div>
         </div>
       </div>
-
-      <div class="classification-filter">
-        <select id="classificationFilter" onchange="filterFrequentResponses()">
-          <option value="">All Categories</option>
-        </select>
-      </div>
-
-      <div id="responsesContainer"></div>
     </div>
   </div>
 
@@ -419,7 +775,6 @@
       const indicator = document.getElementById('speakingIndicator');
       indicator.classList.add('active');
 
-      // Start timer update
       speakingTimerInterval = setInterval(() => {
         const elapsed = Math.floor((Date.now() - speakingStartTime) / 1000);
         document.getElementById('speakingTimer').textContent = elapsed + 's';
@@ -573,38 +928,510 @@
       }
     }
 
+    // ==================== CHOICES HELPER ====================
+    let CHOICE_CATEGORIES = [];
+    let CHOICE_TEMPLATES = [];
+    let selectedTemplateId = null;
+
+    async function loadChoiceTemplates() {
+      try {
+        const url = `${API_URL}/api/choice-templates`;
+        console.log("[ChoiceTemplates] fetching:", url);
+
+        const res = await fetch(url, { cache: "no-store" });
+        console.log("[ChoiceTemplates] status:", res.status);
+
+        if (!res.ok) {
+          const text = await res.text();
+          console.error("[ChoiceTemplates] non-OK response body:", text);
+          alert(`Choice templates failed: HTTP ${res.status}`);
+          CHOICE_CATEGORIES = [];
+          CHOICE_TEMPLATES = [];
+          populateCategoryDropdown();
+          return;
+        }
+
+        const data = await res.json();
+        console.log("[ChoiceTemplates] data:", data);
+
+        CHOICE_CATEGORIES = Array.isArray(data.categories) ? data.categories : [];
+        CHOICE_TEMPLATES = Array.isArray(data.templates) ? data.templates : [];
+
+        populateCategoryDropdown();
+      } catch (e) {
+        console.error("Failed to load choice templates:", e);
+        alert("Failed to load choice templates (see console).");
+        CHOICE_CATEGORIES = [];
+        CHOICE_TEMPLATES = [];
+        populateCategoryDropdown();
+      }
+    }
+
+    function populateCategoryDropdown() {
+      const sel = document.getElementById("choicesCategorySelect");
+      sel.innerHTML = `<option value="">(Select category)</option>`;
+      CHOICE_CATEGORIES.forEach(cat => {
+        const opt = document.createElement("option");
+        opt.value = cat.id;
+        opt.textContent = cat.name;
+        sel.appendChild(opt);
+      });
+
+      // Reset template dropdown
+      document.getElementById("choicesTemplateSelect").innerHTML = `<option value="">(Select template)</option>`;
+    }
+
+    function onCategorySelected() {
+      const categoryId = document.getElementById("choicesCategorySelect").value;
+      const templateSel = document.getElementById("choicesTemplateSelect");
+
+      templateSel.innerHTML = `<option value="">(Select template)</option>`;
+      selectedTemplateId = null;
+
+      if (!categoryId) return;
+
+      // Filter templates by category
+      const filtered = CHOICE_TEMPLATES.filter(t => t.category === categoryId);
+      filtered.forEach(t => {
+        const opt = document.createElement("option");
+        opt.value = t.id;
+        opt.textContent = t.name;
+        templateSel.appendChild(opt);
+      });
+    }
+
+    function onTemplateSelected() {
+      const templateId = document.getElementById("choicesTemplateSelect").value;
+      if (!templateId) {
+        selectedTemplateId = null;
+        return;
+      }
+
+      const t = CHOICE_TEMPLATES.find(x => x.id === templateId);
+      if (!t) return;
+
+      selectedTemplateId = templateId;
+
+      // Fill prompt/options fields
+      document.getElementById("choicesPrompt").value = t.prompt || "";
+      document.getElementById("choicesOptions").value = (t.options || []).join("\n");
+    }
+
+    async function sendChoices() {
+      if (!currentSessionId) {
+        alert('Connect to a session first!');
+        return;
+      }
+
+      const prompt = document.getElementById('choicesPrompt').value.trim();
+      const optionsText = document.getElementById('choicesOptions').value.trim();
+
+      if (!prompt) {
+        alert('Please enter a prompt');
+        return;
+      }
+
+      if (!optionsText) {
+        alert('Please enter at least one option');
+        return;
+      }
+
+      // Parse options (one per line, filter empty lines)
+      const options = optionsText.split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
+
+      if (options.length === 0) {
+        alert('Please enter at least one option');
+        return;
+      }
+
+      const payload = {
+        type: 'choices',
+        prompt: prompt,
+        options: options
+      };
+
+      try {
+        await fetch(`${API_URL}/message`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: currentSessionId, role: 'wizard', text: JSON.stringify(payload) })
+        });
+        console.log('Choices sent:', payload);
+        loadMessages();
+      } catch (e) {
+        alert('Error sending choices: ' + e);
+      }
+    }
+
+    async function saveCurrentTemplate() {
+      if (!selectedTemplateId) {
+        alert("Select a template first to save changes");
+        return;
+      }
+
+      const prompt = (document.getElementById("choicesPrompt").value || "").trim();
+      const optionsText = (document.getElementById("choicesOptions").value || "").trim();
+      const options = optionsText
+        ? optionsText.split("\n").map(s => s.trim()).filter(Boolean)
+        : [];
+
+      if (!prompt) {
+        alert("Prompt is required");
+        return;
+      }
+      if (options.length === 0) {
+        alert("At least one option is required");
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_URL}/api/choice-templates/${selectedTemplateId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt, options })
+        });
+
+        if (res.ok) {
+          const categoryId = document.getElementById("choicesCategorySelect").value;
+          await loadChoiceTemplates();
+
+          // Restore selection
+          document.getElementById("choicesCategorySelect").value = categoryId;
+          onCategorySelected();
+          document.getElementById("choicesTemplateSelect").value = selectedTemplateId;
+
+          alert("Template saved ✅");
+        } else {
+          const err = await res.json();
+          alert("Save failed: " + (err.detail || res.status));
+        }
+      } catch (e) {
+        alert("Error saving template: " + e);
+      }
+    }
+
+    function parseChoicesCommand(text) {
+      try {
+        const json = JSON.parse(text);
+        if (json && json.type === 'choices') return json;
+        return null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // ==================== TASK FLOWS ====================
+    let TASK_FLOWS_CATEGORIES = [];
+    let TASK_FLOWS_TASKS = [];
+    let selectedTaskFlowsTaskId = null;
+    let selectedStepNumber = null;
+    let editingStepNumber = null;
+
+    async function loadTaskFlows() {
+      try {
+        const url = `${API_URL}/api/task-flows`;
+        console.log("[TaskFlows] fetching:", url);
+
+        const res = await fetch(url, { cache: "no-store" });
+        console.log("[TaskFlows] status:", res.status);
+
+        if (!res.ok) {
+          const text = await res.text();
+          console.error("[TaskFlows] non-OK response body:", text);
+          TASK_FLOWS_CATEGORIES = [];
+          TASK_FLOWS_TASKS = [];
+          populateTaskFlowsCategoryDropdown();
+          return;
+        }
+
+        const data = await res.json();
+        console.log("[TaskFlows] data:", data);
+
+        TASK_FLOWS_CATEGORIES = Array.isArray(data.categories) ? data.categories : [];
+        TASK_FLOWS_TASKS = Array.isArray(data.tasks) ? data.tasks : [];
+
+        populateTaskFlowsCategoryDropdown();
+      } catch (e) {
+        console.error("Failed to load task flows:", e);
+        TASK_FLOWS_CATEGORIES = [];
+        TASK_FLOWS_TASKS = [];
+        populateTaskFlowsCategoryDropdown();
+      }
+    }
+
+    function populateTaskFlowsCategoryDropdown() {
+      const sel = document.getElementById("taskFlowsCategorySelect");
+      sel.innerHTML = `<option value="">(Select category)</option>`;
+      TASK_FLOWS_CATEGORIES.forEach(cat => {
+        const opt = document.createElement("option");
+        opt.value = cat.id;
+        opt.textContent = cat.name;
+        sel.appendChild(opt);
+      });
+
+      // Reset task dropdown
+      document.getElementById("taskFlowsTaskSelect").innerHTML = `<option value="">(Select task)</option>`;
+      // Clear steps list
+      document.getElementById("taskStepsList").innerHTML = `
+        <div style="text-align:center; color:#999; padding:20px;">
+          Select a category and task to view steps
+        </div>
+      `;
+    }
+
+    function onTaskFlowsCategorySelected() {
+      const categoryId = document.getElementById("taskFlowsCategorySelect").value;
+      const taskSel = document.getElementById("taskFlowsTaskSelect");
+
+      taskSel.innerHTML = `<option value="">(Select task)</option>`;
+      selectedTaskFlowsTaskId = null;
+      selectedStepNumber = null;
+      editingStepNumber = null;
+
+      if (!categoryId) {
+        document.getElementById("taskStepsList").innerHTML = `
+          <div style="text-align:center; color:#999; padding:20px;">
+            Select a category and task to view steps
+          </div>
+        `;
+        return;
+      }
+
+      // Filter tasks by category
+      const filtered = TASK_FLOWS_TASKS.filter(t => t.category === categoryId);
+      filtered.forEach(t => {
+        const opt = document.createElement("option");
+        opt.value = t.id;
+        opt.textContent = `${t.name_en} (${t.level || 'N/A'})`;
+        taskSel.appendChild(opt);
+      });
+
+      document.getElementById("taskStepsList").innerHTML = `
+        <div style="text-align:center; color:#999; padding:20px;">
+          Select a task to view steps
+        </div>
+      `;
+    }
+
+    function onTaskFlowsTaskSelected() {
+      const taskId = document.getElementById("taskFlowsTaskSelect").value;
+      if (!taskId) {
+        selectedTaskFlowsTaskId = null;
+        selectedStepNumber = null;
+        editingStepNumber = null;
+        document.getElementById("taskStepsList").innerHTML = `
+          <div style="text-align:center; color:#999; padding:20px;">
+            Select a task to view steps
+          </div>
+        `;
+        return;
+      }
+
+      selectedTaskFlowsTaskId = taskId;
+      selectedStepNumber = null;
+      editingStepNumber = null;
+      displayTaskSteps();
+    }
+
+    function displayTaskSteps() {
+      const container = document.getElementById("taskStepsList");
+      container.innerHTML = '';
+
+      if (!selectedTaskFlowsTaskId) return;
+
+      const task = TASK_FLOWS_TASKS.find(t => t.id === selectedTaskFlowsTaskId);
+      if (!task || !task.steps || task.steps.length === 0) {
+        container.innerHTML = `
+          <div style="text-align:center; color:#999; padding:20px;">
+            No steps found for this task
+          </div>
+        `;
+        return;
+      }
+
+      task.steps.forEach(step => {
+        const stepNum = step.step;
+        const isSelected = stepNum === selectedStepNumber;
+        const isEditing = stepNum === editingStepNumber;
+
+        const div = document.createElement('div');
+        div.className = 'task-step-row' + (isSelected ? ' selected' : '') + (isEditing ? ' editing' : '');
+        div.dataset.stepNumber = stepNum;
+
+        div.innerHTML = `
+          <div class="task-step-header">
+            <span class="task-step-number">Step ${stepNum}</span>
+            <span class="task-step-title">— ${escapeHtml(step.title_en || '')}</span>
+            <button class="task-step-edit-btn" onclick="startEditingStep(event, ${stepNum})">Edit</button>
+          </div>
+          <div class="task-step-say">${escapeHtml(step.say_ko || '')}</div>
+          <div class="task-step-edit-area">
+            <textarea id="stepEditTextarea_${stepNum}">${escapeHtml(step.say_ko || '')}</textarea>
+            <div class="task-step-edit-buttons">
+              <button class="task-step-save-btn" onclick="saveStepEdit(event, ${stepNum})">Save</button>
+              <button class="task-step-cancel-btn" onclick="cancelStepEdit(event, ${stepNum})">Cancel</button>
+            </div>
+          </div>
+        `;
+
+        // Click to copy say_ko to message input (but not when clicking edit buttons)
+        div.onclick = (e) => {
+          if (e.target.tagName === 'BUTTON' || e.target.tagName === 'TEXTAREA') return;
+          selectStep(stepNum, step.say_ko);
+        };
+
+        container.appendChild(div);
+      });
+    }
+
+    function selectStep(stepNum, sayKo) {
+      selectedStepNumber = stepNum;
+
+      // Copy say_ko to message input
+      const replyText = document.getElementById('replyText');
+      replyText.value = sayKo || '';
+      replyText.focus();
+
+      // Re-render to show selection highlight
+      displayTaskSteps();
+    }
+
+    function startEditingStep(e, stepNum) {
+      e.stopPropagation();
+      editingStepNumber = stepNum;
+      displayTaskSteps();
+
+      // Focus the textarea
+      setTimeout(() => {
+        const textarea = document.getElementById(`stepEditTextarea_${stepNum}`);
+        if (textarea) textarea.focus();
+      }, 50);
+    }
+
+    function cancelStepEdit(e, stepNum) {
+      e.stopPropagation();
+      editingStepNumber = null;
+      displayTaskSteps();
+    }
+
+    async function saveStepEdit(e, stepNum) {
+      e.stopPropagation();
+
+      if (!selectedTaskFlowsTaskId) {
+        alert("No task selected");
+        return;
+      }
+
+      const textarea = document.getElementById(`stepEditTextarea_${stepNum}`);
+      if (!textarea) return;
+
+      const newSayKo = textarea.value.trim();
+
+      try {
+        const res = await fetch(`${API_URL}/api/task-flows/tasks/${selectedTaskFlowsTaskId}/steps/${stepNum}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ say_ko: newSayKo })
+        });
+
+        if (res.ok) {
+          // Reload task flows to get updated data
+          const categoryId = document.getElementById("taskFlowsCategorySelect").value;
+          const taskId = selectedTaskFlowsTaskId;
+
+          await loadTaskFlows();
+
+          // Restore selections
+          document.getElementById("taskFlowsCategorySelect").value = categoryId;
+          onTaskFlowsCategorySelected();
+          document.getElementById("taskFlowsTaskSelect").value = taskId;
+          selectedTaskFlowsTaskId = taskId;
+          editingStepNumber = null;
+          displayTaskSteps();
+
+          console.log("Step saved successfully");
+        } else {
+          const err = await res.json();
+          alert("Save failed: " + (err.detail || res.status));
+        }
+      } catch (e) {
+        alert("Error saving step: " + e);
+      }
+    }
+
     // ==================== CORE CHAT ====================
-    function connectToSession() {
+    async function connectToSession() {
       const sessionId = document.getElementById('sessionIdInput').value.trim();
       if (!sessionId) { alert('Enter Session ID'); return; }
 
-      currentSessionId = sessionId;
+      const connectBtn = document.getElementById('connectBtn');
+      const hadSession = !!currentSessionId;
+      const statusDot = document.getElementById('statusDot');
+      const statusText = document.getElementById('statusText');
 
-      // Reset all state for fresh session
-      lastMessageCount = 0;
-      currentTutorialStep = 0;
-      hideSpeakingIndicator();
+      connectBtn.disabled = true;
+      connectBtn.textContent = 'Connecting...';
+      connectBtn.style.background = '#2E7D32';
 
-      // Clear messages container
-      const container = document.getElementById('messagesContainer');
-      const speakingIndicator = document.getElementById('speakingIndicator');
-      container.innerHTML = '';
-      container.appendChild(speakingIndicator);
-      container.innerHTML += '<div style="text-align:center; color:#999; margin-top:50px;">Loading messages...</div>';
+      try {
+        const res = await fetch(`${API_URL}/sessions/${sessionId}`);
+        if (!res.ok) {
+          const msg = res.status === 404
+            ? 'Session not found. Make sure the Android app has started this session.'
+            : `Failed to connect (HTTP ${res.status})`;
+          alert(msg);
+          if (!hadSession) {
+            statusDot.classList.remove('connected');
+            statusText.textContent = 'Disconnected';
+          }
+          return;
+        }
 
-      // Reset tutorial UI
-      updateTutorialUI();
+        currentSessionId = sessionId;
+        lastMessageCount = 0;
+        currentTutorialStep = 0;
+        hideSpeakingIndicator();
 
-      // Clear reply text
-      document.getElementById('replyText').value = '';
+        // Clear messages container
+        const container = document.getElementById('messagesContainer');
+        const speakingIndicator = document.getElementById('speakingIndicator');
+        container.innerHTML = '';
+        container.appendChild(speakingIndicator);
+        container.innerHTML += '<div style="text-align:center; color:#999; margin-top:50px;">Loading messages...</div>';
 
-      document.getElementById('statusText').textContent = `Active Session: ${sessionId}`;
-      document.getElementById('statusDot').classList.add('connected');
-      document.getElementById('replyText').disabled = false;
-      document.getElementById('sendButton').disabled = false;
+        // Reset tutorial UI
+        updateTutorialUI();
 
-      startPolling();
-      loadMessages();
+        document.getElementById('replyText').value = '';
+
+        statusText.textContent = `Active Session: ${sessionId}`;
+        statusDot.classList.add('connected');
+        document.getElementById('replyText').disabled = false;
+        document.getElementById('sendButton').disabled = false;
+
+        connectBtn.textContent = 'Connected';
+        connectBtn.style.background = '#1976D2';
+
+        startPolling();
+        loadMessages();
+      } catch (e) {
+        alert('Failed to connect: ' + e);
+        if (!hadSession) {
+          statusDot.classList.remove('connected');
+          statusText.textContent = 'Disconnected';
+        }
+      } finally {
+        connectBtn.disabled = false;
+        if (currentSessionId) {
+          connectBtn.textContent = 'Connected';
+          connectBtn.style.background = '#1976D2';
+        } else {
+          connectBtn.textContent = 'Connect';
+          connectBtn.style.background = '#2E7D32';
+        }
+      }
     }
 
     function startPolling() {
@@ -662,7 +1489,6 @@
         container.scrollHeight - container.scrollTop === container.clientHeight ||
         lastMessageCount === 0;
 
-      // Keep speaking indicator
       const speakingIndicator = document.getElementById('speakingIndicator');
       container.innerHTML = '';
       container.appendChild(speakingIndicator);
@@ -674,22 +1500,18 @@
       }
 
       let lastTimestamp = null;
-      let lastSpeakingEvent = null;
 
-      messages.forEach((msg, index) => {
+      messages.forEach((msg) => {
         const tutorialData = parseTutorialCommand(msg.text);
+        const choicesData = parseChoicesCommand(msg.text);
         const eventData = parseEventData(msg.text);
 
-        // Handle events (speaking indicators, etc.)
         if (eventData) {
-          // Update speaking indicator state
           if (eventData.event === 'speaking_started') {
             showSpeakingIndicator();
-            lastSpeakingEvent = eventData;
           } else if (eventData.event === 'speaking_stopped') {
             hideSpeakingIndicator();
 
-            // Show event message
             const div = document.createElement('div');
             div.className = 'message event';
             const duration = eventData.duration_ms ? formatDuration(eventData.duration_ms) : '';
@@ -704,7 +1526,6 @@
           return;
         }
 
-        // Calculate time gap from previous message
         const currentTimestamp = msg.timestamp ? new Date(msg.timestamp).getTime() : null;
         let gapHtml = '';
         if (lastTimestamp && currentTimestamp && (currentTimestamp - lastTimestamp > 5000)) {
@@ -741,6 +1562,23 @@
               <div class="message-timestamp">${formatTimestamp(msg.timestamp)}</div>
             `;
           }
+
+          container.appendChild(div);
+        } else if (choicesData) {
+          const div = document.createElement('div');
+          div.className = 'message wizard';
+          div.style.background = '#E8F5E9';
+          div.style.border = '2px solid #4CAF50';
+
+          const optionsList = choicesData.options.map((opt, i) => `${i + 1}. ${escapeHtml(opt)}`).join('<br>');
+
+          div.innerHTML = `
+            ${gapHtml}
+            <div class="message-meta">📋 CHOICES SENT</div>
+            <div style="font-weight:bold; color:#2E7D32;">${escapeHtml(choicesData.prompt || '')}</div>
+            <div style="margin-top:8px; padding:8px; background:#fff; border-radius:6px; font-size:13px;">${optionsList}</div>
+            <div class="message-timestamp">${formatTimestamp(msg.timestamp)}</div>
+          `;
 
           container.appendChild(div);
         } else {
@@ -920,6 +1758,8 @@
       (async function() {
         await loadTaskClassifications();
         await loadFrequentResponses();
+        await loadChoiceTemplates();
+        await loadTaskFlows();
       })();
     });
   </script>

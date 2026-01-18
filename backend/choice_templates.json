@@ -1,0 +1,168 @@
+{
+  "categories": [
+    { "id": "basic_smartphone_control", "name": "Basic Smartphone Control" },
+    { "id": "communication", "name": "Communication" },
+    { "id": "contents_viewing", "name": "Contents Viewing" },
+    { "id": "shopping", "name": "Shopping" },
+    { "id": "transportation_location", "name": "Transportation / Location" },
+    { "id": "web_browsing", "name": "Web-browsing" },
+    { "id": "health_related", "name": "Health-related activities" }
+  ],
+  "templates": [
+    {
+      "id": "contents_youtube_weather_top5",
+      "category": "contents_viewing",
+      "name": "YouTube search: 오늘 날씨 — Top 5 results",
+      "prompt": "어떤 영상을 보시겠어요?",
+      "options": [
+        "[영상 제목]",
+        "[영상 제목]",
+        "[영상 제목]",
+        "[영상 제목]",
+        "[영상 제목]"
+      ]
+    },
+    {
+      "id": "contents_youtube_search_top3",
+      "category": "contents_viewing",
+      "name": "YouTube search — Top 3 results",
+      "prompt": "어떤 영상을 보시겠어요?",
+      "options": [
+        "[검색 결과]",
+        "[검색 결과]",
+        "[검색 결과]"
+      ]
+    },
+
+    {
+      "id": "shopping_coupang_water_top5",
+      "category": "shopping",
+      "name": "Order bottled water (Coupang) — Top 5 results",
+      "prompt": "어떤 생수를 주문하시겠어요?",
+      "options": [
+        "[상품명]",
+        "[상품명]",
+        "[상품명]",
+        "[상품명]",
+        "[상품명]"
+      ]
+    },
+    {
+      "id": "shopping_coupang_tissue_top5",
+      "category": "shopping",
+      "name": "Order tissue (Coupang) — Top 5 results",
+      "prompt": "어떤 휴지를 주문하시겠어요?",
+      "options": [
+        "[상품명]",
+        "[상품명]",
+        "[상품명]",
+        "[상품명]",
+        "[상품명]"
+      ]
+    },
+    {
+      "id": "shopping_coupang_tissue_cheapest_top5",
+      "category": "shopping",
+      "name": "Order tissue (Coupang) — Top 5 cheapest (after filter)",
+      "prompt": "가장 저렴한 상품 중에서 어떤 걸 고르시겠어요?",
+      "options": [
+        "[최저가 상품]",
+        "[최저가 상품]",
+        "[최저가 상품]",
+        "[최저가 상품]",
+        "[최저가 상품]"
+      ]
+    },
+    {
+      "id": "shopping_coupang_product_search_top3",
+      "category": "shopping",
+      "name": "Coupang search results — Top 3",
+      "prompt": "어떤 상품을 주문하시겠어요?",
+      "options": [
+        "[상품명]",
+        "[상품명]",
+        "[상품명]"
+      ]
+    },
+    {
+      "id": "shopping_quantity_select",
+      "category": "shopping",
+      "name": "Quantity selection",
+      "prompt": "몇 개를 주문하시겠어요?",
+      "options": [
+        "1개",
+        "2개",
+        "3개",
+        "5개",
+        "10개"
+      ]
+    },
+
+    {
+      "id": "basic_change_wallpaper_image_choice_3",
+      "category": "basic_smartphone_control",
+      "name": "Change wallpaper — Image choices (3)",
+      "prompt": "어떤 배경 화면으로 바꾸실까요?",
+      "options": [
+        "강아지 사진",
+        "파란색 배경과 노란색 원",
+        "노란색 단일색 배경"
+      ]
+    },
+    {
+      "id": "communication_send_image_choice_3",
+      "category": "communication",
+      "name": "Send image via messenger — Image choices (3)",
+      "prompt": "어떤 이미지를 보내시겠어요?",
+      "options": [
+        "강아지 사진",
+        "파란색 배경과 노란색 원",
+        "노란색 단일색 배경"
+      ]
+    },
+
+    {
+      "id": "communication_contact_select_call_top3",
+      "category": "communication",
+      "name": "Make a call — Choose contact (Top 3)",
+      "prompt": "누구에게 전화하시겠어요?",
+      "options": [
+        "[연락처 이름]",
+        "[연락처 이름]",
+        "[연락처 이름]"
+      ]
+    },
+    {
+      "id": "communication_contact_select_message_top3",
+      "category": "communication",
+      "name": "Send a message — Choose contact (Top 3)",
+      "prompt": "누구에게 메시지를 보내시겠어요?",
+      "options": [
+        "[연락처 이름]",
+        "[연락처 이름]",
+        "[연락처 이름]"
+      ]
+    },
+
+    {
+      "id": "general_yes_no",
+      "category": "basic_smartphone_control",
+      "name": "Yes / No confirmation",
+      "prompt": "이대로 진행할까요?",
+      "options": [
+        "예",
+        "아니오"
+      ]
+    },
+    {
+      "id": "general_confirm_cancel",
+      "category": "basic_smartphone_control",
+      "name": "Confirm / Cancel",
+      "prompt": "이 작업을 진행하시겠어요?",
+      "options": [
+        "확인",
+        "취소"
+      ]
+    }
+  ]
+}

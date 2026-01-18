@@ -2,6 +2,8 @@
 __pycache__/
 *.pyc
 .venv/
+backend/venv/
+backend/.venv/
 
 # Node / frontend
 node_modules/
@@ -12,10 +14,15 @@ build/
 .DS_Store
 .vscode/
 
-local.propertiesbackend/wizard_of_oz.log
-backend/frequent_responses.json
-backend/task_classifications.json
+# Android
 frontend/android/.gradle/
 frontend/android/local.properties
-frontend/android/.gradle/
+local.properties
+
+# Logs
+*.log
 backend/wizard_of_oz.log
+
+# Project-specific generated files
+backend/frequent_responses.json
+backend/task_classifications.json

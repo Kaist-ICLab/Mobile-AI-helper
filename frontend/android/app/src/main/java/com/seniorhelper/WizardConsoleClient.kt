@@ -29,7 +29,7 @@ class WizardConsoleClient(
     
     companion object {
         private const val TAG = "WizardConsoleClient"
-        private const val POLL_INTERVAL = 2000L // Poll every 2 seconds
+        private const val POLL_INTERVAL = 1000L // Poll every 1 seconds
     }
     
     fun connect() {
