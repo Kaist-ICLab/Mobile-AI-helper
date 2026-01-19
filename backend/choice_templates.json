@@ -1,12 +1,33 @@
 {
   "categories": [
-    { "id": "basic_smartphone_control", "name": "Basic Smartphone Control" },
-    { "id": "communication", "name": "Communication" },
-    { "id": "contents_viewing", "name": "Contents Viewing" },
-    { "id": "shopping", "name": "Shopping" },
-    { "id": "transportation_location", "name": "Transportation / Location" },
-    { "id": "web_browsing", "name": "Web-browsing" },
-    { "id": "health_related", "name": "Health-related activities" }
+    {
+      "id": "basic_smartphone_control",
+      "name": "Basic Smartphone Control"
+    },
+    {
+      "id": "communication",
+      "name": "Communication"
+    },
+    {
+      "id": "contents_viewing",
+      "name": "Contents Viewing"
+    },
+    {
+      "id": "shopping",
+      "name": "Shopping"
+    },
+    {
+      "id": "transportation_location",
+      "name": "Transportation / Location"
+    },
+    {
+      "id": "web_browsing",
+      "name": "Web-browsing"
+    },
+    {
+      "id": "health_related_activities",
+      "name": "Health-related activities"
+    }
   ],
   "templates": [
     {
@@ -15,73 +36,93 @@
       "name": "YouTube search: 오늘 날씨 — Top 5 results",
       "prompt": "어떤 영상을 보시겠어요?",
       "options": [
-        "[영상 제목]",
-        "[영상 제목]",
-        "[영상 제목]",
-        "[영상 제목]",
-        "[영상 제목]"
+        "오늘 날씨 예보 | 기상청",
+        "날씨뉴스: 오늘의 날씨 한눈에 보기",
+        "오늘 전국 날씨/미세먼지 예보",
+        "아침 날씨 브리핑 (오늘/내일)",
+        "오늘 날씨 총정리 (지역별)"
+      ],
+      "links": [
+        {
+          "task_id": "find_a_video_todays_weather_report",
+          "step": "4-2"
+        }
       ]
     },
     {
-      "id": "contents_youtube_search_top3",
+      "id": "contents_youtube_gangnamstyle_top5",
       "category": "contents_viewing",
-      "name": "YouTube search — Top 3 results",
+      "name": "YouTube search: 강남스타일 — Top 5 results",
       "prompt": "어떤 영상을 보시겠어요?",
       "options": [
-        "[검색 결과]",
-        "[검색 결과]",
-        "[검색 결과]"
+        "PSY - 강남스타일 M/V",
+        "PSY - 강남스타일 라이브 무대",
+        "강남스타일 춤 배우기 (튜토리얼)",
+        "강남스타일 커버댄스 모음",
+        "강남스타일 리액션 영상"
+      ],
+      "links": [
+        {
+          "task_id": "creating_a_playlist_in_youtube_and_inserting_a_video_inside_it",
+          "step": "10-2"
+        }
       ]
     },
-
     {
       "id": "shopping_coupang_water_top5",
       "category": "shopping",
-      "name": "Order bottled water (Coupang) — Top 5 results",
+      "name": "Coupang search: 생수 — Top 5 results",
       "prompt": "어떤 생수를 주문하시겠어요?",
       "options": [
-        "[상품명]",
-        "[상품명]",
-        "[상품명]",
-        "[상품명]",
-        "[상품명]"
+        "삼다수 2L 6개입",
+        "아이시스 2L 6개입",
+        "백산수 2L 6개입",
+        "평창수 2L 6개입",
+        "제주퓨어워터 2L 6개입"
+      ],
+      "links": [
+        {
+          "task_id": "search_for_any_pack_of_water_in_shopping_app",
+          "step": "4-2"
+        }
       ]
     },
     {
       "id": "shopping_coupang_tissue_top5",
       "category": "shopping",
-      "name": "Order tissue (Coupang) — Top 5 results",
-      "prompt": "어떤 휴지를 주문하시겠어요?",
+      "name": "Coupang search: 휴지 — Top 5 results",
+      "prompt": "어떤 휴지를 고르시겠어요?",
       "options": [
-        "[상품명]",
-        "[상품명]",
-        "[상품명]",
-        "[상품명]",
-        "[상품명]"
+        "코디 순수 3겹 화장지 (대용량)",
+        "크리넥스 데코&소프트 3겹 화장지",
+        "깨끗한나라 순수한면 3겹 화장지",
+        "한예지 3겹 화장지 (대용량)",
+        "모나리자 3겹 화장지 (대용량)"
+      ],
+      "links": [
+        {
+          "task_id": "search_for_tissue_and_buy_the_cheapest_product",
+          "step": "4-2"
+        }
       ]
     },
     {
       "id": "shopping_coupang_tissue_cheapest_top5",
       "category": "shopping",
-      "name": "Order tissue (Coupang) — Top 5 cheapest (after filter)",
+      "name": "Coupang: 휴지 — Top 5 cheapest (after filter)",
       "prompt": "가장 저렴한 상품 중에서 어떤 걸 고르시겠어요?",
       "options": [
-        "[최저가 상품]",
-        "[최저가 상품]",
-        "[최저가 상품]",
-        "[최저가 상품]",
-        "[최저가 상품]"
-      ]
-    },
-    {
-      "id": "shopping_coupang_product_search_top3",
-      "category": "shopping",
-      "name": "Coupang search results — Top 3",
-      "prompt": "어떤 상품을 주문하시겠어요?",
-      "options": [
-        "[상품명]",
-        "[상품명]",
-        "[상품명]"
+        "특가 코디 순수 3겹 화장지",
+        "특가 한예지 3겹 화장지",
+        "특가 모나리자 3겹 화장지",
+        "특가 깨끗한나라 3겹 화장지",
+        "특가 크리넥스 3겹 화장지"
+      ],
+      "links": [
+        {
+          "task_id": "search_for_tissue_and_buy_the_cheapest_product",
+          "step": "8-2"
+        }
       ]
     },
     {
@@ -97,7 +138,6 @@
         "10개"
       ]
     },
-
     {
       "id": "basic_change_wallpaper_image_choice_3",
       "category": "basic_smartphone_control",
@@ -107,6 +147,12 @@
         "강아지 사진",
         "파란색 배경과 노란색 원",
         "노란색 단일색 배경"
+      ],
+      "links": [
+        {
+          "task_id": "change_background_image_of_smartphone",
+          "step": "4-2"
+        }
       ]
     },
     {
@@ -118,18 +164,29 @@
         "강아지 사진",
         "파란색 배경과 노란색 원",
         "노란색 단일색 배경"
+      ],
+      "links": [
+        {
+          "task_id": "send_an_image_via_sns_messenger",
+          "step": "4-2"
+        }
       ]
     },
-
     {
       "id": "communication_contact_select_call_top3",
       "category": "communication",
       "name": "Make a call — Choose contact (Top 3)",
       "prompt": "누구에게 전화하시겠어요?",
       "options": [
-        "[연락처 이름]",
-        "[연락처 이름]",
-        "[연락처 이름]"
+        "김민수",
+        "이서연",
+        "박지훈"
+      ],
+      "links": [
+        {
+          "task_id": "make_a_phone_call",
+          "step": "3"
+        }
       ]
     },
     {
@@ -138,12 +195,62 @@
       "name": "Send a message — Choose contact (Top 3)",
       "prompt": "누구에게 메시지를 보내시겠어요?",
       "options": [
-        "[연락처 이름]",
-        "[연락처 이름]",
-        "[연락처 이름]"
+        "김민수",
+        "이서연",
+        "박지훈"
       ]
     },
-
+    {
+      "id": "shopping_danawa_massagechair_top5",
+      "category": "shopping",
+      "name": "Danawa search: 안마의자 — Top 5 results",
+      "prompt": "어떤 안마의자를 비교해볼까요?",
+      "options": [
+        "바디프랜드 팬텀2 안마의자",
+        "세라젬 마스터 V6",
+        "휴테크 카이 안마의자",
+        "코지마 오딧세이 안마의자",
+        "LG 힐링미 안마의자"
+      ],
+      "links": [
+        {
+          "task_id": "comparing_prices_of_a_product_in_multiple_platform_and_buying_cheapest_one",
+          "step": "6-2"
+        }
+      ]
+    },
+    {
+      "id": "shopping_danawa_prices_top5",
+      "category": "shopping",
+      "name": "Danawa price comparison — Top 5 prices",
+      "prompt": "어떤 가격을 보시겠어요?",
+      "options": [
+        "가격 1",
+        "가격 2",
+        "가격 3",
+        "가격 4",
+        "가격 5"
+      ],
+      "links": [
+        {
+          "task_id": "comparing_prices_of_a_product_in_multiple_platform_and_buying_cheapest_one",
+          "step": "10"
+        }
+      ]
+    },
+    {
+      "id": "shopping_product_compare_options",
+      "category": "shopping",
+      "name": "Product comparison — Options",
+      "prompt": "이 상품으로 무엇을 할까요?",
+      "options": [
+        "가격 비교 보기",
+        "상세 스펙 보기",
+        "리뷰 보기",
+        "구매처 보기",
+        "다른 상품 보기"
+      ]
+    },
     {
       "id": "general_yes_no",
       "category": "basic_smartphone_control",

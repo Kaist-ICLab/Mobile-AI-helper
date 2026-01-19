@@ -37,29 +37,29 @@
       "level": "Low",
       "steps": [
         {
-          "step": 1,
+          "step": "1",
           "title_en": "Open Google Play Store (Touch Google Play Store App)",
-          "say_ko": "Google Play Store 열겠습니다."
+          "say_ko": "제가 Google Play Store 열겠습니다."
         },
         {
-          "step": 2,
+          "step": "2",
           "title_en": "Press search tab",
-          "say_ko": "검색 버튼을 누르겠습니다."
+          "say_ko": "제가 검색 버튼을 누르겠습니다."
         },
         {
-          "step": 3,
+          "step": "3",
           "title_en": "Type app name",
-          "say_ko": "원하시는 내용을 입력하겠습니다."
+          "say_ko": "제가 원하시는 내용을 입력하겠습니다."
         },
         {
-          "step": 4,
+          "step": "4",
           "title_en": "Press the app",
-          "say_ko": "해당 버튼을 누르겠습니다."
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         },
         {
-          "step": 5,
+          "step": "5",
           "title_en": "Press download",
-          "say_ko": "설치 버튼을 누르겠습니다."
+          "say_ko": "제가 설치 버튼을 누르겠습니다."
         }
       ]
     },
@@ -70,62 +70,80 @@
       "level": "Low",
       "steps": [
         {
-          "step": 1,
+          "step": "1",
           "title_en": "Press the call icon on home screen",
-          "say_ko": "전화 걸기 버튼을 누르겠습니다."
+          "say_ko": "제가 전화 걸기 버튼을 누르겠습니다."
         },
         {
-          "step": 2,
+          "step": "2",
           "title_en": "Press 'Contacts' tab",
-          "say_ko": "해당 버튼을 누르겠습니다."
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         },
         {
-          "step": 3,
+          "step": "3",
           "title_en": "Press desired person",
-          "say_ko": "해당 버튼을 누르겠습니다."
+          "say_ko": "제가 해당 버튼을 누르겠습니다.",
+          "choice_template_ids": [
+            "communication_contact_select_call_top3"
+          ],
+          "choice_template_links": [
+            {
+              "link_step": "3",
+              "template_id": "communication_contact_select_call_top3"
+            }
+          ]
         },
         {
-          "step": 4,
+          "step": "4",
           "title_en": "Press the 'call' button",
-          "say_ko": "전화 걸기 버튼을 누르겠습니다."
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         }
       ]
     },
     {
-      "id": "find_a_video_today_s_weather_report",
+      "id": "find_a_video_todays_weather_report",
       "category": "contents_viewing",
       "name_en": "Find a video (Today's weather report)",
       "level": "Low",
       "steps": [
         {
-          "step": 1,
+          "step": "1",
           "title_en": "Open YouTube (Press YouTube App)",
-          "say_ko": "YouTube 열겠습니다."
+          "say_ko": "제가 YouTube 열겠습니다."
         },
         {
-          "step": 2,
+          "step": "2",
           "title_en": "Press search icon",
-          "say_ko": "검색 버튼을 누르겠습니다."
+          "say_ko": "제가 검색 버튼을 누르겠습니다."
         },
         {
-          "step": 3,
+          "step": "3",
           "title_en": "Type the title of desired video",
-          "say_ko": "원하시는 내용을 입력하겠습니다."
+          "say_ko": "제가 원하시는 내용을 입력하겠습니다."
         },
         {
-          "step": 4,
+          "step": "4-1",
           "title_en": "Show the list of the video",
-          "say_ko": "목록을 보여드릴게요. 여기서 하나 선택해 주세요."
+          "say_ko": "목록을 보여드리겠습니다. 여기서 하나 선택해 주세요."
         },
         {
-          "step": 5,
+          "step": "4-2",
           "title_en": "User chooses a video",
-          "say_ko": "여기에서 하나 선택해 주세요."
+          "say_ko": "여기에서 하나 선택해 주세요.",
+          "choice_template_ids": [
+            "contents_youtube_weather_top5"
+          ],
+          "choice_template_links": [
+            {
+              "link_step": "4-2",
+              "template_id": "contents_youtube_weather_top5"
+            }
+          ]
         },
         {
-          "step": 6,
+          "step": "5",
           "title_en": "Click the chosen video",
-          "say_ko": "다음 단계로 진행하겠습니다."
+          "say_ko": "제가 다음 단계로 진행하겠습니다."
         }
       ]
     },
@@ -136,34 +154,43 @@
       "level": "Low",
       "steps": [
         {
-          "step": 1,
+          "step": "1",
           "title_en": "Open Coupang (Press Coupang App)",
-          "say_ko": "Coupang 열겠습니다."
+          "say_ko": "제가 Coupang 열겠습니다."
         },
         {
-          "step": 2,
+          "step": "2",
           "title_en": "Press search button",
-          "say_ko": "검색 버튼을 누르겠습니다."
+          "say_ko": "제가 검색 버튼을 누르겠습니다."
         },
         {
-          "step": 3,
+          "step": "3",
           "title_en": "Type 'pack of water'",
-          "say_ko": "생수를 검색어로 입력하겠습니다."
+          "say_ko": "제가 생수를 검색어로 입력하겠습니다."
         },
         {
-          "step": 4,
+          "step": "4-1",
           "title_en": "Show the list of the products",
-          "say_ko": "목록을 보여드릴게요. 여기서 하나 선택해 주세요."
+          "say_ko": "목록을 보여드리겠습니다. 여기서 하나 선택해 주세요."
         },
         {
-          "step": 5,
+          "step": "4-2",
           "title_en": "User chooses a product",
-          "say_ko": "여기에서 하나 선택해 주세요."
+          "say_ko": "여기에서 하나 선택해 주세요.",
+          "choice_template_ids": [
+            "shopping_coupang_water_top5"
+          ],
+          "choice_template_links": [
+            {
+              "link_step": "4-2",
+              "template_id": "shopping_coupang_water_top5"
+            }
+          ]
         },
         {
-          "step": 6,
+          "step": "5",
           "title_en": "Press the chosen product",
-          "say_ko": "해당 버튼을 누르겠습니다."
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         }
       ]
     },
@@ -174,24 +201,24 @@
       "level": "Low",
       "steps": [
         {
-          "step": 1,
+          "step": "1",
           "title_en": "Open naver map (Press Naver Map App)",
-          "say_ko": "naver map 열겠습니다."
+          "say_ko": "제가 naver map 열겠습니다."
         },
         {
-          "step": 2,
+          "step": "2",
           "title_en": "Press search button",
-          "say_ko": "검색 버튼을 누르겠습니다."
+          "say_ko": "제가 검색 버튼을 누르겠습니다."
         },
         {
-          "step": 3,
+          "step": "3",
           "title_en": "Type \"KAIST\"",
-          "say_ko": "KAIST를 입력하겠습니다."
+          "say_ko": "제가 KAIST를 입력하겠습니다."
         },
         {
-          "step": 4,
+          "step": "4",
           "title_en": "Press \"카이스트 본원\"",
-          "say_ko": "해당 버튼을 누르겠습니다."
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         }
       ]
     },
@@ -202,29 +229,29 @@
       "level": "Low",
       "steps": [
         {
-          "step": 1,
+          "step": "1",
           "title_en": "Open Naver (Press Naver App)",
-          "say_ko": "Naver 열겠습니다."
+          "say_ko": "제가 Naver 열겠습니다."
         },
         {
-          "step": 2,
+          "step": "2",
           "title_en": "Press search bar",
-          "say_ko": "검색 버튼을 누르겠습니다."
+          "say_ko": "제가 검색 버튼을 누르겠습니다."
         },
         {
-          "step": 3,
+          "step": "3",
           "title_en": "Type \"뉴스\"",
-          "say_ko": "'뉴스'를 입력하겠습니다."
+          "say_ko": "제가 '뉴스'를 입력하겠습니다."
         },
         {
-          "step": 4,
+          "step": "4",
           "title_en": "Scroll down to find \"Naver News Home\"",
           "say_ko": "스크롤해서 찾아보겠습니다."
         },
         {
-          "step": 5,
+          "step": "5",
           "title_en": "Press Naver News Home",
-          "say_ko": "해당 버튼을 누르겠습니다."
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         }
       ]
     },
@@ -235,14 +262,14 @@
       "level": "Low",
       "steps": [
         {
-          "step": 1,
+          "step": "1",
           "title_en": "Open Samsung Health App (Press Samsung Health App)",
-          "say_ko": "Samsung Health App 열겠습니다."
+          "say_ko": "제가 Samsung Health App 열겠습니다."
         },
         {
-          "step": 2,
+          "step": "2",
           "title_en": "Press 'Step count' tab",
-          "say_ko": "해당 버튼을 누르겠습니다."
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         }
       ]
     },
@@ -253,39 +280,48 @@
       "level": "Moderate",
       "steps": [
         {
-          "step": 1,
+          "step": "1",
           "title_en": "Long press the home screen",
-          "say_ko": "홈 화면을 길게 누르겠습니다."
+          "say_ko": "제가 다음 단계로 진행하겠습니다."
         },
         {
-          "step": 2,
+          "step": "2",
           "title_en": "Press \"배경화면 및 스타일\"",
-          "say_ko": "해당 버튼을 누르겠습니다."
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         },
         {
-          "step": 3,
+          "step": "3",
           "title_en": "Press \"배경화면 변경\"",
-          "say_ko": "해당 버튼을 누르겠습니다."
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         },
         {
-          "step": 4,
+          "step": "4-1",
           "title_en": "Show the list of recommended images",
-          "say_ko": "목록을 보여드릴게요. 여기서 하나 선택해 주세요."
+          "say_ko": "목록을 보여드리겠습니다. 여기서 하나 선택해 주세요."
         },
         {
-          "step": 5,
+          "step": "4-2",
           "title_en": "User chooses a background image",
-          "say_ko": "여기에서 하나 선택해 주세요."
+          "say_ko": "여기에서 하나 선택해 주세요.",
+          "choice_template_ids": [
+            "basic_change_wallpaper_image_choice_3"
+          ],
+          "choice_template_links": [
+            {
+              "link_step": "4-2",
+              "template_id": "basic_change_wallpaper_image_choice_3"
+            }
+          ]
         },
         {
-          "step": 6,
+          "step": "5",
           "title_en": "Press the desired background image",
-          "say_ko": "해당 버튼을 누르겠습니다."
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         },
         {
-          "step": 7,
+          "step": "6",
           "title_en": "Press \"완료\"",
-          "say_ko": "완료 버튼을 누르겠습니다."
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         }
       ]
     },
@@ -296,59 +332,59 @@
       "level": "Moderate",
       "steps": [
         {
-          "step": 1,
+          "step": "1-1",
           "title_en": "Ask user to select an image in gallery",
           "say_ko": "여기에서 하나 선택해 주세요."
         },
         {
-          "step": 2,
+          "step": "1-2",
           "title_en": "User selects an image (either voice or text)",
-          "say_ko": "여기에서 하나 선택해 주세요."
+          "say_ko": "제가 다음 단계로 진행하겠습니다."
         },
         {
-          "step": 3,
+          "step": "2-1",
           "title_en": "Ask user to select a person to send an image to",
           "say_ko": "여기에서 하나 선택해 주세요."
         },
         {
-          "step": 4,
+          "step": "2-2",
           "title_en": "User either types with keyboard or says with voice",
-          "say_ko": "다음 단계로 진행하겠습니다."
+          "say_ko": "제가 다음 단계로 진행하겠습니다."
         },
         {
-          "step": 5,
+          "step": "3",
           "title_en": "Long press the image",
-          "say_ko": "이미지를 길게 누르겠습니다."
+          "say_ko": "제가 다음 단계로 진행하겠습니다."
         },
         {
-          "step": 6,
+          "step": "4",
           "title_en": "Press \"공유\"",
-          "say_ko": "해당 버튼을 누르겠습니다."
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         },
         {
-          "step": 7,
+          "step": "5",
           "title_en": "Press KakaoTalk",
-          "say_ko": "해당 버튼을 누르겠습니다."
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         },
         {
-          "step": 8,
+          "step": "6",
           "title_en": "Press search button",
-          "say_ko": "검색 버튼을 누르겠습니다."
+          "say_ko": "제가 검색 버튼을 누르겠습니다."
         },
         {
-          "step": 9,
+          "step": "7",
           "title_en": "Type in the person's name",
-          "say_ko": "원하시는 내용을 입력하겠습니다."
+          "say_ko": "제가 원하시는 내용을 입력하겠습니다."
         },
         {
-          "step": 10,
+          "step": "8",
           "title_en": "Press the profile of the person",
-          "say_ko": "해당 버튼을 누르겠습니다."
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         },
         {
-          "step": 11,
+          "step": "9",
           "title_en": "Press \"보내기\"",
-          "say_ko": "보내기 버튼을 누르겠습니다."
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         }
       ]
     },
@@ -359,39 +395,48 @@
       "level": "Moderate",
       "steps": [
         {
-          "step": 1,
+          "step": "1",
           "title_en": "Open YouTube (Press YouTube App)",
-          "say_ko": "YouTube 열겠습니다."
+          "say_ko": "제가 YouTube 열겠습니다."
         },
         {
-          "step": 2,
+          "step": "2",
           "title_en": "Press search icon",
-          "say_ko": "검색 버튼을 누르겠습니다."
+          "say_ko": "제가 검색 버튼을 누르겠습니다."
         },
         {
-          "step": 3,
+          "step": "3",
           "title_en": "Type the title of desired video",
-          "say_ko": "원하시는 내용을 입력하겠습니다."
+          "say_ko": "제가 원하시는 내용을 입력하겠습니다."
         },
         {
-          "step": 4,
+          "step": "4-1",
           "title_en": "Show the list of the video",
-          "say_ko": "목록을 보여드릴게요. 여기서 하나 선택해 주세요."
+          "say_ko": "목록을 보여드리겠습니다. 여기서 하나 선택해 주세요."
         },
         {
-          "step": 5,
+          "step": "4-2",
           "title_en": "User chooses a video",
-          "say_ko": "여기에서 하나 선택해 주세요."
+          "say_ko": "여기에서 하나 선택해 주세요.",
+          "choice_template_ids": [
+            "contents_youtube_weather_top5"
+          ],
+          "choice_template_links": [
+            {
+              "link_step": "4-2",
+              "template_id": "contents_youtube_weather_top5"
+            }
+          ]
         },
         {
-          "step": 6,
+          "step": "5",
           "title_en": "Click the chosen video",
-          "say_ko": "다음 단계로 진행하겠습니다."
+          "say_ko": "제가 다음 단계로 진행하겠습니다."
         },
         {
-          "step": 7,
+          "step": "6",
           "title_en": "Press 'subscribe' button",
-          "say_ko": "구독 버튼을 누르겠습니다."
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         }
       ]
     },
@@ -402,59 +447,77 @@
       "level": "Moderate",
       "steps": [
         {
-          "step": 1,
+          "step": "1",
           "title_en": "Open Coupang (Press Coupang App)",
-          "say_ko": "Coupang 열겠습니다."
+          "say_ko": "제가 Coupang 열겠습니다."
         },
         {
-          "step": 2,
+          "step": "2",
           "title_en": "Press search button",
-          "say_ko": "검색 버튼을 누르겠습니다."
+          "say_ko": "제가 검색 버튼을 누르겠습니다."
         },
         {
-          "step": 3,
+          "step": "3",
           "title_en": "Type 'tissue'",
-          "say_ko": "휴지를 검색어로 입력하겠습니다."
+          "say_ko": "제가 휴지를 검색어로 입력하겠습니다."
         },
         {
-          "step": 4,
+          "step": "4-1",
           "title_en": "Show the list of the products",
-          "say_ko": "목록을 보여드릴게요. 여기서 하나 선택해 주세요."
+          "say_ko": "목록을 보여드리겠습니다. 여기서 하나 선택해 주세요."
         },
         {
-          "step": 5,
+          "step": "4-2",
           "title_en": "User chooses a product",
-          "say_ko": "여기에서 하나 선택해 주세요."
+          "say_ko": "여기에서 하나 선택해 주세요.",
+          "choice_template_ids": [
+            "shopping_coupang_tissue_top5"
+          ],
+          "choice_template_links": [
+            {
+              "link_step": "4-2",
+              "template_id": "shopping_coupang_tissue_top5"
+            }
+          ]
         },
         {
-          "step": 6,
+          "step": "5",
           "title_en": "Press filter",
-          "say_ko": "해당 버튼을 누르겠습니다."
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         },
         {
-          "step": 7,
+          "step": "6",
           "title_en": "Press '낮은 가격순'",
-          "say_ko": "해당 버튼을 누르겠습니다."
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         },
         {
-          "step": 8,
+          "step": "7",
           "title_en": "Press \"N개 상품보기\"",
-          "say_ko": "해당 버튼을 누르겠습니다."
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         },
         {
-          "step": 9,
+          "step": "8-1",
           "title_en": "Show the list of the products",
-          "say_ko": "목록을 보여드릴게요. 여기서 하나 선택해 주세요."
+          "say_ko": "목록을 보여드리겠습니다. 여기서 하나 선택해 주세요."
         },
         {
-          "step": 10,
+          "step": "8-2",
           "title_en": "User chooses a product",
-          "say_ko": "여기에서 하나 선택해 주세요."
+          "say_ko": "여기에서 하나 선택해 주세요.",
+          "choice_template_ids": [
+            "shopping_coupang_tissue_cheapest_top5"
+          ],
+          "choice_template_links": [
+            {
+              "link_step": "8-2",
+              "template_id": "shopping_coupang_tissue_cheapest_top5"
+            }
+          ]
         },
         {
-          "step": 11,
+          "step": "9",
           "title_en": "Press the chosen product",
-          "say_ko": "해당 버튼을 누르겠습니다."
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         }
       ]
     },
@@ -465,54 +528,54 @@
       "level": "Moderate",
       "steps": [
         {
-          "step": 1,
+          "step": "1",
           "title_en": "Open naver map (Press Naver Map App)",
-          "say_ko": "naver map 열겠습니다."
+          "say_ko": "제가 naver map 열겠습니다."
         },
         {
-          "step": 2,
+          "step": "2",
           "title_en": "Press search button",
-          "say_ko": "검색 버튼을 누르겠습니다."
+          "say_ko": "제가 검색 버튼을 누르겠습니다."
         },
         {
-          "step": 3,
+          "step": "3",
           "title_en": "Type \"KAIST\"",
-          "say_ko": "KAIST를 입력하겠습니다."
+          "say_ko": "제가 KAIST를 입력하겠습니다."
         },
         {
-          "step": 4,
+          "step": "4",
           "title_en": "Press \"카이스트 본원\"",
-          "say_ko": "해당 버튼을 누르겠습니다."
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         },
         {
-          "step": 5,
+          "step": "5",
           "title_en": "Press \"도착\"",
-          "say_ko": "해당 버튼을 누르겠습니다."
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         },
         {
-          "step": 6,
+          "step": "6",
           "title_en": "Press the \"public transportation\" option",
-          "say_ko": "해당 버튼을 누르겠습니다."
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         },
         {
-          "step": 7,
+          "step": "7",
           "title_en": "Press filter button",
-          "say_ko": "해당 버튼을 누르겠습니다."
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         },
         {
-          "step": 8,
+          "step": "8",
           "title_en": "Press '최소 시간순'",
-          "say_ko": "해당 버튼을 누르겠습니다."
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         },
         {
-          "step": 9,
+          "step": "9",
           "title_en": "Press '완료'",
-          "say_ko": "완료 버튼을 누르겠습니다."
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         },
         {
-          "step": 10,
+          "step": "10",
           "title_en": "Press the first result",
-          "say_ko": "해당 버튼을 누르겠습니다."
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         }
       ]
     },
@@ -523,143 +586,252 @@
       "level": "Moderate",
       "steps": [
         {
-          "step": 1,
-          "title_en": "Open Naver News",
-          "say_ko": "Naver News 열겠습니다."
+          "step": "1",
+          "title_en": "Open Naver (Press Naver App)",
+          "say_ko": "제가 Naver 열겠습니다."
         },
         {
-          "step": 2,
-          "title_en": "Open the “Most viewed” (daily) section",
-          "say_ko": "the “Most viewed”section 열겠습니다."
+          "step": "2",
+          "title_en": "Press search bar",
+          "say_ko": "제가 검색 버튼을 누르겠습니다."
         },
         {
-          "step": 3,
-          "title_en": "Select a top article",
-          "say_ko": "여기에서 하나 선택해 주세요."
+          "step": "3",
+          "title_en": "Type \"뉴스\"",
+          "say_ko": "제가 '뉴스'를 입력하겠습니다."
         },
         {
-          "step": 4,
-          "title_en": "Scroll inside the article",
+          "step": "4",
+          "title_en": "Scroll down to find \"Naver News Home\"",
           "say_ko": "스크롤해서 찾아보겠습니다."
         },
         {
-          "step": 5,
-          "title_en": "Tap a related article link",
-          "say_ko": "다음 단계로 진행하겠습니다."
+          "step": "5",
+          "title_en": "Press Naver News Home",
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
+        },
+        {
+          "step": "6",
+          "title_en": "Press \"랭킹\" tab",
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
+        },
+        {
+          "step": "7",
+          "title_en": "Scroll down to the bottom",
+          "say_ko": "스크롤해서 찾아보겠습니다."
+        },
+        {
+          "step": "8",
+          "title_en": "Press \"많이 본\"",
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
+        },
+        {
+          "step": "9",
+          "title_en": "Press the article on the top",
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         }
       ]
     },
     {
-      "id": "open_a_diary_and_record_yesterday_s_food_intake",
+      "id": "add_walking_jogging_and_hiking_exercise_to_my_exercises",
       "category": "health_related_activities",
-      "name_en": "Open a diary and record yesterday's food intake",
+      "name_en": "Add 'walking,' 'jogging,' and hiking' exercise to my exercises",
       "level": "Moderate",
       "steps": [
         {
-          "step": 1,
-          "title_en": "Open a diary app",
-          "say_ko": "a diary app 열겠습니다."
+          "step": "1",
+          "title_en": "Open Samsung Health App (Press Samsung Health App)",
+          "say_ko": "제가 Samsung Health App 열겠습니다."
         },
         {
-          "step": 2,
-          "title_en": "Create a new entry for yesterday",
-          "say_ko": "새 기록을 추가하겠습니다."
+          "step": "2",
+          "title_en": "Scroll down",
+          "say_ko": "스크롤해서 찾아보겠습니다."
         },
         {
-          "step": 3,
-          "title_en": "Type yesterday's food intake",
-          "say_ko": "원하시는 내용을 입력하겠습니다."
+          "step": "3",
+          "title_en": "Press \"더보기\" in exercises card",
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         },
         {
-          "step": 4,
-          "title_en": "Save the entry",
-          "say_ko": "저장하겠습니다."
+          "step": "4",
+          "title_en": "Press the star button on the walking card",
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
+        },
+        {
+          "step": "5",
+          "title_en": "Press the star button on the joggin card",
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
+        },
+        {
+          "step": "6",
+          "title_en": "Press the star button on the hiking card",
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
+        },
+        {
+          "step": "7",
+          "title_en": "Navigate back to home interface",
+          "say_ko": "제가 다음 단계로 진행하겠습니다."
         }
       ]
     },
     {
-      "id": "find_a_video_and_share_the_link_to_a_person_in_sns_messenger",
+      "id": "find_a_webpage_kaist_and_share_the_link_to_a_person_in_sns_messenger",
       "category": "communication",
-      "name_en": "Find a video and share the link to a person in SNS messenger",
+      "name_en": "Find a webpage (KAIST) and share the link to a person in SNS messenger",
       "level": "High",
       "steps": [
         {
-          "step": 1,
-          "title_en": "Open YouTube",
-          "say_ko": "YouTube 열겠습니다."
+          "step": "1",
+          "title_en": "Open google chrome (Press Google Chrome App)",
+          "say_ko": "제가 google chrome 열겠습니다."
         },
         {
-          "step": 2,
-          "title_en": "Press search icon",
-          "say_ko": "검색 버튼을 누르겠습니다."
+          "step": "2",
+          "title_en": "Press search button",
+          "say_ko": "제가 검색 버튼을 누르겠습니다."
         },
         {
-          "step": 3,
-          "title_en": "Type video keywords",
-          "say_ko": "원하시는 내용을 입력하겠습니다."
+          "step": "3",
+          "title_en": "Type \"KAIST\"",
+          "say_ko": "제가 KAIST를 입력하겠습니다."
         },
         {
-          "step": 4,
-          "title_en": "Select a video",
-          "say_ko": "여기에서 하나 선택해 주세요."
+          "step": "4",
+          "title_en": "Press KAIST homepage that appears on top",
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         },
         {
-          "step": 5,
-          "title_en": "Press share",
-          "say_ko": "공유 버튼을 누르겠습니다."
+          "step": "5",
+          "title_en": "Press the link bar",
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         },
         {
-          "step": 6,
-          "title_en": "Select a messenger app",
-          "say_ko": "여기에서 하나 선택해 주세요."
+          "step": "6",
+          "title_en": "Press copy link button",
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         },
         {
-          "step": 7,
-          "title_en": "Select a person",
-          "say_ko": "여기에서 하나 선택해 주세요."
+          "step": "7",
+          "title_en": "Navigate back to homescreen",
+          "say_ko": "제가 다음 단계로 진행하겠습니다."
         },
         {
-          "step": 8,
-          "title_en": "Press send",
-          "say_ko": "보내기 버튼을 누르겠습니다."
+          "step": "8",
+          "title_en": "Open Kakaotalk App (Press kakaotalk)",
+          "say_ko": "제가 Kakaotalk App 열겠습니다."
+        },
+        {
+          "step": "9",
+          "title_en": "Press search button",
+          "say_ko": "제가 검색 버튼을 누르겠습니다."
+        },
+        {
+          "step": "10",
+          "title_en": "Type in the name of person to send to",
+          "say_ko": "제가 원하시는 내용을 입력하겠습니다."
+        },
+        {
+          "step": "11",
+          "title_en": "Press the person's profile",
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
+        },
+        {
+          "step": "12",
+          "title_en": "Press 1:1 채팅",
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
+        },
+        {
+          "step": "13",
+          "title_en": "Long press chat interface",
+          "say_ko": "제가 다음 단계로 진행하겠습니다."
+        },
+        {
+          "step": "14",
+          "title_en": "Press \"붙여넣기\"",
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
+        },
+        {
+          "step": "15",
+          "title_en": "Press send button",
+          "say_ko": "제가 보내기 버튼을 누르겠습니다."
         }
       ]
     },
     {
       "id": "creating_a_playlist_in_youtube_and_inserting_a_video_inside_it",
       "category": "contents_viewing",
-      "name_en": "Creating a playlist in YouTube and inserting a video inside it",
+      "name_en": "Creating a playlist in YouTube and inserting a video (강남스타일) inside it",
       "level": "High",
       "steps": [
         {
-          "step": 1,
-          "title_en": "Open YouTube",
-          "say_ko": "YouTube 열겠습니다."
+          "step": "1",
+          "title_en": "Ask user the name / visibility of the playlist",
+          "say_ko": "여기에서 하나 선택해 주세요."
         },
         {
-          "step": 2,
-          "title_en": "Search and open a video",
-          "say_ko": "다음 단계로 진행하겠습니다."
+          "step": "2",
+          "title_en": "Open YouTube (Press YouTube App)",
+          "say_ko": "제가 YouTube 열겠습니다."
         },
         {
-          "step": 3,
-          "title_en": "Press save",
-          "say_ko": "저장 버튼을 누르겠습니다."
+          "step": "3",
+          "title_en": "Press my page",
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         },
         {
-          "step": 4,
-          "title_en": "Create a new playlist",
-          "say_ko": "다음 단계로 진행하겠습니다."
+          "step": "4",
+          "title_en": "Press +",
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         },
         {
-          "step": 5,
-          "title_en": "Type playlist name",
-          "say_ko": "원하시는 내용을 입력하겠습니다."
+          "step": "5",
+          "title_en": "Type in the name of the playlist",
+          "say_ko": "제가 원하시는 내용을 입력하겠습니다."
         },
         {
-          "step": 6,
-          "title_en": "Confirm creation",
-          "say_ko": "다음 단계로 진행하겠습니다."
+          "step": "6",
+          "title_en": "Select the desired visibility",
+          "say_ko": "제가 다음 단계로 진행하겠습니다."
+        },
+        {
+          "step": "7",
+          "title_en": "Press make button",
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
+        },
+        {
+          "step": "8",
+          "title_en": "Press \"동영상 추가\" button",
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
+        },
+        {
+          "step": "9",
+          "title_en": "Type in the title of the video",
+          "say_ko": "제가 원하시는 내용을 입력하겠습니다."
+        },
+        {
+          "step": "10-1",
+          "title_en": "Show the list of the video",
+          "say_ko": "목록을 보여드리겠습니다. 여기서 하나 선택해 주세요."
+        },
+        {
+          "step": "10-2",
+          "title_en": "User chooses a video",
+          "say_ko": "여기에서 하나 선택해 주세요.",
+          "choice_template_ids": [
+            "contents_youtube_gangnamstyle_top5"
+          ],
+          "choice_template_links": [
+            {
+              "link_step": "10-2",
+              "template_id": "contents_youtube_gangnamstyle_top5"
+            }
+          ]
+        },
+        {
+          "step": "11",
+          "title_en": "Press \"재생목록에 저장\"",
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         }
       ]
     },
@@ -670,117 +842,141 @@
       "level": "High",
       "steps": [
         {
-          "step": 1,
-          "title_en": "Open the first shopping platform",
-          "say_ko": "the first shopping platform 열겠습니다."
+          "step": "1",
+          "title_en": "Open Google Chrome (Press Google Chrome App)",
+          "say_ko": "제가 Google Chrome 열겠습니다."
         },
         {
-          "step": 2,
-          "title_en": "Search for the product",
-          "say_ko": "다음 단계로 진행하겠습니다."
+          "step": "2",
+          "title_en": "Press search button",
+          "say_ko": "제가 검색 버튼을 누르겠습니다."
         },
         {
-          "step": 3,
-          "title_en": "Note the price",
-          "say_ko": "가격을 메모해둘게요."
+          "step": "3",
+          "title_en": "Press danawa",
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         },
         {
-          "step": 4,
-          "title_en": "Open the second shopping platform",
-          "say_ko": "the second shopping platform 열겠습니다."
+          "step": "4",
+          "title_en": "Press search button",
+          "say_ko": "제가 검색 버튼을 누르겠습니다."
         },
         {
-          "step": 5,
-          "title_en": "Search for the product",
-          "say_ko": "다음 단계로 진행하겠습니다."
+          "step": "5",
+          "title_en": "Type in \"안마의자\"",
+          "say_ko": "제가 원하시는 내용을 입력하겠습니다."
         },
         {
-          "step": 6,
-          "title_en": "Compare prices",
-          "say_ko": "가격을 비교해보겠습니다."
+          "step": "6-1",
+          "title_en": "Show user the list of top 5 products",
+          "say_ko": "제가 다음 단계로 진행하겠습니다."
         },
         {
-          "step": 7,
-          "title_en": "Select the cheapest product",
+          "step": "6-2",
+          "title_en": "User selects a product",
+          "say_ko": "제가 다음 단계로 진행하겠습니다.",
+          "choice_template_ids": [
+            "shopping_danawa_massagechair_top5"
+          ],
+          "choice_template_links": [
+            {
+              "link_step": "6-2",
+              "template_id": "shopping_danawa_massagechair_top5"
+            }
+          ]
+        },
+        {
+          "step": "7",
+          "title_en": "Press the selected product",
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
+        },
+        {
+          "step": "8",
+          "title_en": "Press \"가격비교\" button",
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
+        },
+        {
+          "step": "9",
+          "title_en": "Ask user to select desired option",
           "say_ko": "여기에서 하나 선택해 주세요."
         },
         {
-          "step": 8,
-          "title_en": "Proceed to buy",
-          "say_ko": "다음 단계로 진행하겠습니다."
+          "step": "10",
+          "title_en": "Select the desired option",
+          "say_ko": "제가 다음 단계로 진행하겠습니다.",
+          "choice_template_ids": [
+          "shopping_danawa_prices_top5"
+          ],
+          "choice_template_links": [
+            {
+              "link_step": "10",
+              "template_id": "shopping_danawa_prices_top5"
+            }
+          ]
+        },
+        {
+          "step": "11",
+          "title_en": "Press \"화면이동\" button",
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         }
       ]
     },
     {
-      "id": "find_and_book_a_nearby_clinic_appointment",
-      "category": "transportation_location",
-      "name_en": "Find and Book a Nearby Clinic Appointment",
+      "id": "open_a_diary_and_record_yesterdays_dinner_intake",
+      "category": "health_related_activities",
+      "name_en": "Open a diary and record yesterday's dinner intake",
       "level": "High",
       "steps": [
         {
-          "step": 1,
-          "title_en": "Open Naver Map",
-          "say_ko": "Naver Map 열겠습니다."
+          "step": "1",
+          "title_en": "Open Samsung Health App (Press Samsung Health App)",
+          "say_ko": "제가 Samsung Health App 열겠습니다."
         },
         {
-          "step": 2,
-          "title_en": "Search nearby clinic",
-          "say_ko": "다음 단계로 진행하겠습니다."
+          "step": "2",
+          "title_en": "Press 'Step count' tab",
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
         },
         {
-          "step": 3,
-          "title_en": "Select a clinic",
+          "step": "3",
+          "title_en": "Scroll Down",
+          "say_ko": "스크롤해서 찾아보겠습니다."
+        },
+        {
+          "step": "4",
+          "title_en": "Press \"입력\" in \"음식\" card",
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
+        },
+        {
+          "step": "5",
+          "title_en": "Press 저녁",
+          "say_ko": "제가 해당 버튼을 누르겠습니다."
+        },
+        {
+          "step": "6-1",
+          "title_en": "Ask user which food they ate for dinner",
           "say_ko": "여기에서 하나 선택해 주세요."
         },
         {
-          "step": 4,
-          "title_en": "Open reservation/booking information",
-          "say_ko": "reservation/booking information 열겠습니다."
+          "step": "6-2",
+          "title_en": "User answers either via voice / text",
+          "say_ko": "제가 다음 단계로 진행하겠습니다."
         },
         {
-          "step": 5,
-          "title_en": "Select date and time",
-          "say_ko": "다음 단계로 진행하겠습니다."
+          "step": "7",
+          "title_en": "Press search tab",
+          "say_ko": "제가 검색 버튼을 누르겠습니다."
         },
         {
-          "step": 6,
-          "title_en": "Confirm booking",
-          "say_ko": "다음 단계로 진행하겠습니다."
-        }
-      ]
-    },
-    {
-      "id": "find_a_website_and_register_an_id",
-      "category": "web_browsing",
-      "name_en": "Find a website and register an ID",
-      "level": "High",
-      "steps": [
-        {
-          "step": 1,
-          "title_en": "Open web browser",
-          "say_ko": "web browser 열겠습니다."
-        },
-        {
-          "step": 2,
-          "title_en": "Search for the website",
-          "say_ko": "다음 단계로 진행하겠습니다."
-        },
-        {
-          "step": 3,
-          "title_en": "Open sign-up page",
-          "say_ko": "sign-up page 열겠습니다."
-        },
-        {
-          "step": 4,
-          "title_en": "Type ID and password",
-          "say_ko": "아이디와 비밀번호를 입력하겠습니다."
-        },
-        {
-          "step": 5,
-          "title_en": "Submit registration",
-          "say_ko": "다음 단계로 진행하겠습니다."
+          "step": "8",
+          "title_en": "Type in the food the user answered",
+          "say_ko": "제가 원하시는 내용을 입력하겠습니다."
         }
       ]
     }
-  ]
+  ],
+  "_meta": {
+    "schema": "task_steps_tagged_v1",
+    "notes": "choice_template_ids/choice_template_links are optional fields added for step-to-choice linking."
+  }
 }

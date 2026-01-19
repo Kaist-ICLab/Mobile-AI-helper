@@ -596,6 +596,12 @@
       margin-top: 10px;
       font-style: italic;
     }
+    .task-flows-status {
+      font-size: 11px;
+      color: #666;
+      margin-top: 4px;
+      min-height: 14px;
+    }
   </style>
 </head>
 <body>
@@ -667,7 +673,7 @@
               <option value="">(Select category)</option>
             </select>
 
-            <label>Template:</label>
+            <label>Task:</label>
             <select id="choicesTemplateSelect" onchange="onTemplateSelected()">
               <option value="">(Select template)</option>
             </select>
@@ -735,6 +741,7 @@
           <div class="task-flows-hint">
             Click a step to copy message to input box. Click "Edit" to modify and save.
           </div>
+          <div class="task-flows-status" id="taskFlowsStatus"></div>
         </div>
       </div>
     </div>
@@ -1128,6 +1135,11 @@
     let selectedTaskFlowsTaskId = null;
     let selectedStepNumber = null;
     let editingStepNumber = null;
+    function setTaskFlowsStatus(msg) {
+      const el = document.getElementById("taskFlowsStatus");
+      if (!el) return;
+      el.textContent = msg || '';
+    }
 
     async function loadTaskFlows() {
       try {
@@ -1153,11 +1165,13 @@
         TASK_FLOWS_TASKS = Array.isArray(data.tasks) ? data.tasks : [];
 
         populateTaskFlowsCategoryDropdown();
+        setTaskFlowsStatus(`Loaded ${TASK_FLOWS_TASKS.length} tasks`);
       } catch (e) {
         console.error("Failed to load task flows:", e);
         TASK_FLOWS_CATEGORIES = [];
         TASK_FLOWS_TASKS = [];
         populateTaskFlowsCategoryDropdown();
+        setTaskFlowsStatus("Failed to load tasks");
       }
     }
 
@@ -1252,47 +1266,86 @@
       }
 
       task.steps.forEach(step => {
-        const stepNum = step.step;
-        const isSelected = stepNum === selectedStepNumber;
-        const isEditing = stepNum === editingStepNumber;
+        const stepId = String(step.step);
+        const isSelected = stepId === selectedStepNumber;
+        const isEditing = stepId === editingStepNumber;
 
         const div = document.createElement('div');
         div.className = 'task-step-row' + (isSelected ? ' selected' : '') + (isEditing ? ' editing' : '');
-        div.dataset.stepNumber = stepNum;
+        div.dataset.stepNumber = stepId;
 
         div.innerHTML = `
           <div class="task-step-header">
-            <span class="task-step-number">Step ${stepNum}</span>
+            <span class="task-step-number">Step ${stepId}</span>
             <span class="task-step-title">— ${escapeHtml(step.title_en || '')}</span>
-            <button class="task-step-edit-btn" onclick="startEditingStep(event, ${stepNum})">Edit</button>
+            <button class="task-step-edit-btn">Edit</button>
           </div>
           <div class="task-step-say">${escapeHtml(step.say_ko || '')}</div>
           <div class="task-step-edit-area">
-            <textarea id="stepEditTextarea_${stepNum}">${escapeHtml(step.say_ko || '')}</textarea>
+            <textarea id="stepEditTextarea_${stepId}">${escapeHtml(step.say_ko || '')}</textarea>
             <div class="task-step-edit-buttons">
-              <button class="task-step-save-btn" onclick="saveStepEdit(event, ${stepNum})">Save</button>
-              <button class="task-step-cancel-btn" onclick="cancelStepEdit(event, ${stepNum})">Cancel</button>
+              <button class="task-step-save-btn">Save</button>
+              <button class="task-step-cancel-btn">Cancel</button>
             </div>
           </div>
         `;
 
-        // Click to copy say_ko to message input (but not when clicking edit buttons)
+        // Wire up click handlers
+        const editBtn = div.querySelector('.task-step-edit-btn');
+        if (editBtn) {
+          editBtn.onclick = (e) => startEditingStep(e, stepId);
+        }
+        const saveBtn = div.querySelector('.task-step-save-btn');
+        if (saveBtn) {
+          saveBtn.onclick = (e) => saveStepEdit(e, stepId);
+        }
+        const cancelBtn = div.querySelector('.task-step-cancel-btn');
+        if (cancelBtn) {
+          cancelBtn.onclick = (e) => cancelStepEdit(e, stepId);
+        }
+
+        // Click to select step (but not when clicking edit buttons or textarea)
         div.onclick = (e) => {
-          if (e.target.tagName === 'BUTTON' || e.target.tagName === 'TEXTAREA') return;
-          selectStep(stepNum, step.say_ko);
+          if (e.target.closest('.task-step-edit-btn') || e.target.closest('.task-step-save-btn') || e.target.closest('.task-step-cancel-btn') || e.target.closest('.task-step-edit-area') || e.target.tagName === 'TEXTAREA') return;
+          selectStep(step);
         };
 
         container.appendChild(div);
       });
     }
 
-    function selectStep(stepNum, sayKo) {
-      selectedStepNumber = stepNum;
+    function selectStep(stepObj) {
+      const stepId = String(stepObj.step);
+      selectedStepNumber = stepId;
 
-      // Copy say_ko to message input
-      const replyText = document.getElementById('replyText');
-      replyText.value = sayKo || '';
-      replyText.focus();
+      const hasLinkedTemplates = Array.isArray(stepObj.choice_template_ids) && stepObj.choice_template_ids.length > 0;
+
+      if (hasLinkedTemplates) {
+        const templateId = stepObj.choice_template_ids[0];
+        if (!CHOICE_TEMPLATES || CHOICE_TEMPLATES.length === 0) {
+          setTaskFlowsStatus("Linked template unavailable (not loaded)");
+        } else {
+          const template = CHOICE_TEMPLATES.find(t => t.id === templateId);
+          if (template) {
+            const categorySelect = document.getElementById("choicesCategorySelect");
+            categorySelect.value = template.category || '';
+            onCategorySelected();
+
+            const templateSelect = document.getElementById("choicesTemplateSelect");
+            templateSelect.value = template.id;
+            onTemplateSelected();
+            setTaskFlowsStatus(`Linked template selected: ${template.name || template.id}`);
+          } else {
+            setTaskFlowsStatus(`Linked template not found: ${templateId}`);
+          }
+        }
+      } else {
+        // Copy say_ko to message input
+        const replyText = document.getElementById('replyText');
+        replyText.value = stepObj.say_ko || '';
+        replyText.focus();
+        setTaskFlowsStatus("Step copied to input");
+      }
 
       // Re-render to show selection highlight
       displayTaskSteps();
@@ -1300,7 +1353,7 @@
 
     function startEditingStep(e, stepNum) {
       e.stopPropagation();
-      editingStepNumber = stepNum;
+      editingStepNumber = String(stepNum);
       displayTaskSteps();
 
       // Focus the textarea
@@ -1324,13 +1377,14 @@
         return;
       }
 
-      const textarea = document.getElementById(`stepEditTextarea_${stepNum}`);
+      const stepId = String(stepNum);
+      const textarea = document.getElementById(`stepEditTextarea_${stepId}`);
       if (!textarea) return;
 
       const newSayKo = textarea.value.trim();
 
       try {
-        const res = await fetch(`${API_URL}/api/task-flows/tasks/${selectedTaskFlowsTaskId}/steps/${stepNum}`, {
+        const res = await fetch(`${API_URL}/api/task-flows/tasks/${selectedTaskFlowsTaskId}/steps/${encodeURIComponent(stepId)}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ say_ko: newSayKo })
@@ -1352,12 +1406,15 @@
           displayTaskSteps();
 
           console.log("Step saved successfully");
+          setTaskFlowsStatus("Save ok");
         } else {
           const err = await res.json();
           alert("Save failed: " + (err.detail || res.status));
+          setTaskFlowsStatus("Save failed");
         }
       } catch (e) {
         alert("Error saving step: " + e);
+        setTaskFlowsStatus("Save failed");
       }
     }
 
