@@ -34,6 +34,7 @@ import android.view.Gravity
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.FrameLayout
 import android.widget.ImageButton
@@ -54,6 +55,7 @@ import kotlin.random.Random
 import co.daily.CallClient
 import co.daily.CallClientListener
 import com.mobileaihelper.BuildConfig
+import kotlin.math.log
 
 
 class OverlayService : Service() {
@@ -87,7 +89,7 @@ class OverlayService : Service() {
     private var hiddenMessages = mutableListOf<View>()
 
     // Chat window state
-    private var currentChatHeight = 1500
+    private var currentChatHeight = WindowManager.LayoutParams.MATCH_PARENT
     private var isMinimized = false
     private var chatLayoutParams: WindowManager.LayoutParams? = null
 
@@ -102,8 +104,6 @@ class OverlayService : Service() {
     private lateinit var controlsLayout: LinearLayout
     private lateinit var minimizeButton: ImageButton
     private lateinit var repeatButton: ImageButton
-    private lateinit var topResizeHandle: View
-    private lateinit var bottomResizeHandle: View
 
     // Last assistant message for repeat functionality
     private var lastAssistantMessage: String? = null
@@ -130,8 +130,8 @@ class OverlayService : Service() {
 
     companion object {
         private const val TAG = "OverlayService"
-        private const val MIN_CHAT_HEIGHT = 800
-        private const val MAX_CHAT_HEIGHT = 1500
+        private const val MIN_CHAT_HEIGHT = ViewGroup.LayoutParams.WRAP_CONTENT
+        private const val MAX_CHAT_HEIGHT = WindowManager.LayoutParams.MATCH_PARENT
         private const val RESIZE_THRESHOLD_DP = 20  // Edge detection zone in dp
 
         private fun generateSessionId(): String {
@@ -509,48 +509,9 @@ class OverlayService : Service() {
         }
         controlsLayout.addView(micButton)
 
-        // Create top resize handle (invisible)
-        topResizeHandle = View(this).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                resizeThresholdPx
-            )
-            setBackgroundColor(Color.TRANSPARENT)
-            setOnTouchListener(createResizeListener(isTop = true))
-        }
-
-        // Create bottom resize handle (visible with nice styling)
-        bottomResizeHandle = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                resizeThresholdPx + 10  // Slightly taller for easier grabbing
-            )
-            setPadding(0, 5, 0, 5)
-            setBackgroundColor(0xFFE0E0E0.toInt())
-
-            // Add visual indicator (three horizontal lines)
-            val indicator = View(this@OverlayService).apply {
-                layoutParams = LinearLayout.LayoutParams(60, 4).apply {
-                    setMargins(0, 2, 0, 2)
-                }
-                background = GradientDrawable().apply {
-                    shape = GradientDrawable.RECTANGLE
-                    cornerRadius = 2f
-                    setColor(0xFF9E9E9E.toInt())
-                }
-            }
-            addView(indicator)
-
-            setOnTouchListener(createResizeListener(isTop = false))
-        }
-
-        chatLayout.addView(topResizeHandle)
         chatLayout.addView(headerLayout)
         chatLayout.addView(messagesScroll)
         chatLayout.addView(controlsLayout)
-        chatLayout.addView(bottomResizeHandle)
 
         @Suppress("DEPRECATION")
         chatLayoutParams = WindowManager.LayoutParams(
@@ -559,7 +520,7 @@ class OverlayService : Service() {
             WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         )
-        chatLayoutParams!!.gravity = Gravity.BOTTOM
+        chatLayoutParams!!.gravity = Gravity.TOP
         chatLayoutParams!!.y = 100
         chatView = chatLayout
         windowManager.addView(chatView, chatLayoutParams)
@@ -588,12 +549,6 @@ class OverlayService : Service() {
             if (::controlsLayout.isInitialized) {
                 controlsLayout.visibility = View.GONE
             }
-            if (::topResizeHandle.isInitialized) {
-                topResizeHandle.visibility = View.GONE
-            }
-            if (::bottomResizeHandle.isInitialized) {
-                bottomResizeHandle.visibility = View.GONE
-            }
             chatLayoutParams!!.height = MIN_CHAT_HEIGHT
         } else {
             // Restore full view
@@ -601,13 +556,7 @@ class OverlayService : Service() {
             if (::controlsLayout.isInitialized) {
                 controlsLayout.visibility = View.VISIBLE
             }
-            if (::topResizeHandle.isInitialized) {
-                topResizeHandle.visibility = View.VISIBLE
-            }
-            if (::bottomResizeHandle.isInitialized) {
-                bottomResizeHandle.visibility = View.VISIBLE
-            }
-            chatLayoutParams!!.height = currentChatHeight
+            chatLayoutParams!!.height = MAX_CHAT_HEIGHT
         }
 
         windowManager.updateViewLayout(chatView, chatLayoutParams)
