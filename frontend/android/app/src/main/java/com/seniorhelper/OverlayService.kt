@@ -76,7 +76,7 @@ class OverlayService : Service() {
     private lateinit var micButton: ImageButton
     private lateinit var messagesContainer: LinearLayout
     private lateinit var messagesScroll: ScrollView
-    private lateinit var sessionIdText: TextView
+    private lateinit var titleView : TextView
     private var currentMessageView: View? = null
 
     // Tutorial State
@@ -117,7 +117,7 @@ class OverlayService : Service() {
 
     // Wizard Chat Client
     private var wizardClient: WizardConsoleClient? = null
-    private val sessionId = generateSessionId()
+    private var sessionId : String = "-1"
     private val mainHandler = Handler(Looper.getMainLooper())
     private var wizardSocketConnected: Boolean = false
     private var sessionPaired: Boolean = false
@@ -135,9 +135,6 @@ class OverlayService : Service() {
         private const val MAX_CHAT_HEIGHT = WindowManager.LayoutParams.MATCH_PARENT
         private const val RESIZE_THRESHOLD_DP = 20  // Edge detection zone in dp
 
-        private fun generateSessionId(): String {
-            return Random.nextInt(1000, 9999).toString()
-        }
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -152,14 +149,20 @@ class OverlayService : Service() {
 
             windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
 
-            connectToWizardConsole()
-            showBubble()
         } catch (e: Exception) {
             Log.e(TAG, "Error in onCreate", e)
         }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        sessionId = intent?.getStringExtra("sessionID")!!
+        try {
+            connectToWizardConsole()
+            showBubble()
+        }
+        catch (e : Exception){
+            Log.e(TAG, "Error on starting command")
+        }
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -252,10 +255,6 @@ class OverlayService : Service() {
             },
             onConnectionStatusChanged = { _ ->
                 mainHandler.post {
-                    if(::sessionIdText.isInitialized) {
-                        // Keep white regardless of connection status
-                        sessionIdText.setTextColor(Color.WHITE)
-                    }
                 }
             }
         )
@@ -391,19 +390,20 @@ class OverlayService : Service() {
             textSize = 24f
             setTextColor(Color.WHITE)
             setTypeface(null, android.graphics.Typeface.BOLD)
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
             setOnClickListener {
                 performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                 toggleMinimize()
             }
         }
         val titleText = TextView(this).apply {
-            text = " Helper Chat"
+            text = "AI 도우미"
             textSize = 24f
             setTextColor(Color.WHITE)
             setTypeface(null, android.graphics.Typeface.BOLD)
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
+        titleView = titleText
         repeatButton = ImageButton(this).apply {
             setImageResource(android.R.drawable.ic_menu_rotate)
             setBackgroundColor(Color.TRANSPARENT)
@@ -411,7 +411,7 @@ class OverlayService : Service() {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { setMargins(8, 0, 8, 0) }
+            ).apply {}
             setOnClickListener {
                 performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                 repeatLastMessage()
@@ -448,14 +448,7 @@ class OverlayService : Service() {
         topRow.addView(repeatButton)
         topRow.addView(closeButton)
 
-        sessionIdText = TextView(this).apply {
-            text = "Session: $sessionId"
-            textSize = 14f
-            // Always white per request
-            setTextColor(Color.WHITE)
-        }
         headerLayout.addView(topRow)
-        headerLayout.addView(sessionIdText)
 
         // Add touch listener for drag-move only (header moves window)
         headerLayout.setOnTouchListener(object : View.OnTouchListener {
@@ -556,15 +549,17 @@ class OverlayService : Service() {
         if (chatView == null || chatLayoutParams == null) return
 
         isMinimized = !isMinimized
-
+        clearMessage()
         if (isMinimized) {
             // Hide content, show only header
             messagesScroll.visibility = View.GONE
             if (::controlsLayout.isInitialized) {
                 controlsLayout.visibility = View.GONE
             }
+
             interveneButton.visibility = View.VISIBLE
             chatLayoutParams!!.height = MIN_CHAT_HEIGHT
+            titleView.text = "AI가 일하는 중..."
         } else {
             // Restore full view
             messagesScroll.visibility = View.VISIBLE
@@ -573,6 +568,7 @@ class OverlayService : Service() {
             }
             interveneButton.visibility = View.GONE
             chatLayoutParams!!.height = MAX_CHAT_HEIGHT
+            titleView.text = "AI 도우미"
         }
 
         windowManager.updateViewLayout(chatView, chatLayoutParams)
