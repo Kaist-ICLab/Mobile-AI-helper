@@ -102,7 +102,8 @@ class OverlayService : Service() {
 
     // Store UI references for visibility toggling
     private lateinit var controlsLayout: LinearLayout
-    private lateinit var minimizeButton: ImageButton
+    private lateinit var minimizeButton: View
+    private lateinit var interveneButton : ImageButton
     private lateinit var repeatButton: ImageButton
 
     // Last assistant message for repeat functionality
@@ -384,8 +385,20 @@ class OverlayService : Service() {
         }
 
         val topRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+
+        minimizeButton = TextView(this).apply {
+            text = "💬"
+            textSize = 24f
+            setTextColor(Color.WHITE)
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            setOnClickListener {
+                performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                toggleMinimize()
+            }
+        }
         val titleText = TextView(this).apply {
-            text = "💬 Helper Chat"
+            text = " Helper Chat"
             textSize = 24f
             setTextColor(Color.WHITE)
             setTypeface(null, android.graphics.Typeface.BOLD)
@@ -407,19 +420,19 @@ class OverlayService : Service() {
             isEnabled = false
             alpha = 0.3f
         }
-        minimizeButton = ImageButton(this).apply {
-            setImageResource(android.R.drawable.ic_menu_upload)
+        interveneButton = ImageButton(this).apply {
+            setImageResource(android.R.drawable.ic_media_pause)
             setBackgroundColor(Color.TRANSPARENT)
-            setColorFilter(0xFFFFFFFF.toInt(), android.graphics.PorterDuff.Mode.SRC_IN)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { setMargins(8, 0, 8, 0) }
+            setColorFilter(Color.WHITE)
             setOnClickListener {
                 performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                toggleMinimize()
+                if(isMinimized){
+                   toggleMinimize();
+                }
+                startRecording()
             }
         }
+        interveneButton.visibility = View.GONE
         val closeButton = ImageButton(this).apply {
             setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
             setBackgroundColor(Color.TRANSPARENT)
@@ -429,9 +442,10 @@ class OverlayService : Service() {
                 hideChatWindow()
             }
         }
-        topRow.addView(titleText)
-        topRow.addView(repeatButton)
         topRow.addView(minimizeButton)
+        topRow.addView(titleText)
+        topRow.addView(interveneButton)
+        topRow.addView(repeatButton)
         topRow.addView(closeButton)
 
         sessionIdText = TextView(this).apply {
@@ -549,6 +563,7 @@ class OverlayService : Service() {
             if (::controlsLayout.isInitialized) {
                 controlsLayout.visibility = View.GONE
             }
+            interveneButton.visibility = View.VISIBLE
             chatLayoutParams!!.height = MIN_CHAT_HEIGHT
         } else {
             // Restore full view
@@ -556,18 +571,13 @@ class OverlayService : Service() {
             if (::controlsLayout.isInitialized) {
                 controlsLayout.visibility = View.VISIBLE
             }
+            interveneButton.visibility = View.GONE
             chatLayoutParams!!.height = MAX_CHAT_HEIGHT
         }
 
         windowManager.updateViewLayout(chatView, chatLayoutParams)
 
         // Update minimize button icon
-        if (::minimizeButton.isInitialized) {
-            minimizeButton.setImageResource(
-                if (isMinimized) android.R.drawable.ic_menu_more  // Expand icon
-                else android.R.drawable.ic_menu_upload           // Minimize icon
-            )
-        }
     }
 
     private fun repeatLastMessage() {
