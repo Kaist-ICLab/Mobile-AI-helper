@@ -504,8 +504,8 @@ class OverlayService : Service() {
         }
         micButton = ImageButton(this).apply {
             setImageResource(android.R.drawable.ic_btn_speak_now)
-            background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(0xFF42A5F5.toInt()) }
-            layoutParams = LinearLayout.LayoutParams(200, 200)
+            background = GradientDrawable().apply { shape = GradientDrawable.RECTANGLE; setColor(0xFF42A5F5.toInt()) }
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.MATCH_PARENT)
             setColorFilter(Color.WHITE)
             scaleType = ImageView.ScaleType.FIT_CENTER
             setPadding(40, 40, 40, 40)
@@ -698,7 +698,7 @@ class OverlayService : Service() {
     private fun updateMicButton(recording: Boolean) {
         if (!::micButton.isInitialized) return
         val color = if (recording) 0xFFE53935.toInt() else 0xFF42A5F5.toInt()
-        micButton.background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(color) }
+        micButton.background = GradientDrawable().apply { setColor(color) }
         if (recording) showUserMessage("듣고 있어요...")
     }
 
