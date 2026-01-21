@@ -93,16 +93,13 @@ class OverlayService : Service() {
     private var hiddenMessages = mutableListOf<View>()
 
     // Chat window state
-    private var currentChatHeight = WindowManager.LayoutParams.MATCH_PARENT
     private var isMinimized = false
     private var chatLayoutParams: WindowManager.LayoutParams? = null
 
-    // Header drag state
-    private var headerLastY = 0
-    private var headerTouchedY = 0f
-    private var isDraggingResize = false
-    private var isDraggingMove = false
-    private var dragStartHeight = 0
+    // Chat list state
+    private var agentResponseViewList = mutableListOf<View>();
+    private var userStatusViewList = mutableListOf<View>();
+
 
     // Store UI references for visibility toggling
     private lateinit var controlsLayout: LinearLayout
@@ -121,8 +118,6 @@ class OverlayService : Service() {
     private var wizardClient: WizardConsoleClient? = null
     private var sessionId : String = "-1"
     private val mainHandler = Handler(Looper.getMainLooper())
-    private var wizardSocketConnected: Boolean = false
-    private var sessionPaired: Boolean = false
 
     // Audio Recording
     private var recorder: AudioRecord? = null
@@ -137,7 +132,6 @@ class OverlayService : Service() {
         private const val MAX_CHAT_HEIGHT = WindowManager.LayoutParams.MATCH_PARENT
         private const val MIN_CHAT_WIDTH = WindowManager.LayoutParams.WRAP_CONTENT
         private const val MAX_CHAT_WIDTH = WindowManager.LayoutParams.MATCH_PARENT
-        private const val RESIZE_THRESHOLD_DP = 20  // Edge detection zone in dp
 
     }
 
@@ -503,7 +497,7 @@ class OverlayService : Service() {
 
         @Suppress("DEPRECATION")
         chatLayoutParams = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.MATCH_PARENT, currentChatHeight,
+            MAX_CHAT_WIDTH, MAX_CHAT_HEIGHT,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY else WindowManager.LayoutParams.TYPE_PHONE,
             WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
             PixelFormat.TRANSLUCENT
@@ -602,50 +596,21 @@ class OverlayService : Service() {
         Log.i(TAG, "Repeated assistant message: $message")
     }
 
-    private fun createResizeListener(isTop: Boolean): View.OnTouchListener {
-        return object : View.OnTouchListener {
-            override fun onTouch(v: View?, event: MotionEvent): Boolean {
-                if (chatLayoutParams == null || isMinimized) return false
-
-                when (event.action) {
-                    MotionEvent.ACTION_DOWN -> {
-                        dragStartHeight = chatLayoutParams!!.height
-                        headerTouchedY = event.rawY
-                        isDraggingResize = true
-                        return true
-                    }
-
-                    MotionEvent.ACTION_MOVE -> {
-                        if (!isDraggingResize) return true
-
-                        val deltaY = event.rawY - headerTouchedY
-
-                        val newHeight = if (isTop) {
-                            // Top edge: dragging up decreases height, dragging down increases height
-                            (dragStartHeight - deltaY.toInt()).coerceIn(MIN_CHAT_HEIGHT, MAX_CHAT_HEIGHT)
-                        } else {
-                            // Bottom edge: dragging down increases height, dragging up decreases height
-                            (dragStartHeight + deltaY.toInt()).coerceIn(MIN_CHAT_HEIGHT, MAX_CHAT_HEIGHT)
-                        }
-
-                        chatLayoutParams!!.height = newHeight
-                        currentChatHeight = newHeight
-                        windowManager.updateViewLayout(chatView, chatLayoutParams)
-                        return true
-                    }
-
-                    MotionEvent.ACTION_UP -> {
-                        isDraggingResize = false
-                        return true
-                    }
-                }
-                return false
-            }
+    private fun clearMessage() {
+        clearAgentMessage();
+        clearUserStateMesssage()
+    }
+    private fun clearAgentMessage() {
+        for (messageView in agentResponseViewList){
+            messagesContainer.removeView(messageView)
+            agentResponseViewList.remove(messageView)
         }
     }
-
-    private fun clearMessage() {
-        messagesContainer.removeAllViews();
+    private fun clearUserStateMesssage() {
+        for (messageView in userStatusViewList){
+            messagesContainer.removeView(messageView);
+            userStatusViewList.remove(messageView)
+        }
     }
 
     private fun showUserMessage(message: String) {
@@ -661,7 +626,12 @@ class OverlayService : Service() {
         val icon = createIcon(android.R.drawable.ic_menu_myplaces)
         row.addView(text)
         row.addView(icon)
-        messagesContainer.addView(row)
+        showUserMessage(row)
+    }
+    private fun showUserMessage(message : View){
+        clearUserStateMesssage()
+        messagesContainer.addView(message)
+        userStatusViewList.add(message)
     }
 
     private fun showAssistantResponse(message: String) {
@@ -692,17 +662,17 @@ class OverlayService : Service() {
         row.addView(icon)
         row.addView(text)
         messagesContainer.addView(row)
+        agentResponseViewList.add(row)
         clovaTTS(message)
     }
 
     private fun showLoadingBubbles() {
-        clearMessage()
         val text = TextView(this).apply {
             text = "●  ●  ●"; textSize = 40f; setTextColor(0xFF90CAF9.toInt()); gravity = Gravity.CENTER
             background = GradientDrawable().apply { shape = GradientDrawable.RECTANGLE; cornerRadius = 45f; setColor(0xFFE3F2FD.toInt()) }
             setPadding(60, 50, 60, 50)
         }
-        messagesContainer.addView(text)
+        showUserMessage(text)
     }
 
     private fun updateMicButton(recording: Boolean) {
