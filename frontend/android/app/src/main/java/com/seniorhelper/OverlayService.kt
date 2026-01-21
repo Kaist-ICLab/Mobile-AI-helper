@@ -371,7 +371,6 @@ class OverlayService : Service() {
             background = drawable
             clipToOutline = true
         }
-        
         val headerLayout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             background = GradientDrawable().apply {
@@ -528,6 +527,43 @@ class OverlayService : Service() {
         )
         chatLayoutParams!!.gravity = Gravity.TOP
         chatLayoutParams!!.y = 100
+
+        chatLayout.setOnTouchListener(object : View.OnTouchListener {
+            private var lastX = 0
+            private var lastY = 0
+            private var touchedX = 0f
+            private var touchedY = 0f
+            private var isDragging = false
+            override fun onTouch(v: View?, event: MotionEvent): Boolean {
+                when (event.action) {
+                    MotionEvent.ACTION_DOWN -> {
+                        lastX = chatLayoutParams!!.x
+                        lastY = chatLayoutParams!!.y
+                        touchedX = event.rawX
+                        touchedY = event.rawY
+                        isDragging = false
+                        return true
+                    }
+                    MotionEvent.ACTION_MOVE -> {
+                        val deltaX = event.rawX - touchedX
+                        val deltaY = event.rawY - touchedY
+                        if (kotlin.math.abs(deltaX) > 10 || kotlin.math.abs(deltaY) > 10) isDragging = true
+                        chatLayoutParams!!.x = lastX - deltaX.toInt()
+                        chatLayoutParams!!.y = lastY + deltaY.toInt()
+                        windowManager.updateViewLayout(chatView, chatLayoutParams)
+                        return true
+                    }
+                    MotionEvent.ACTION_UP -> {
+                        if (!isDragging) {
+                            chatLayout.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                            toggleChatWindow()
+                        }
+                        return true
+                    }
+                }
+                return false
+            }
+        })
         chatView = chatLayout
         windowManager.addView(chatView, chatLayoutParams)
         isChatVisible = true
