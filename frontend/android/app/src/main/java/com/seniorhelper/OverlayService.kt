@@ -82,7 +82,6 @@ class OverlayService : Service() {
     private lateinit var messagesContainer: LinearLayout
     private lateinit var messagesScroll: ScrollView
     private lateinit var titleView : TextView
-    private var currentMessageView: View? = null
 
     // Tutorial State
     private var isTutorialVisible = false
@@ -646,11 +645,10 @@ class OverlayService : Service() {
     }
 
     private fun clearMessage() {
-        currentMessageView?.let { messagesContainer.removeView(it); currentMessageView = null }
+        messagesContainer.removeAllViews();
     }
 
     private fun showUserMessage(message: String) {
-        clearMessage()
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER
         }
@@ -664,7 +662,6 @@ class OverlayService : Service() {
         row.addView(text)
         row.addView(icon)
         messagesContainer.addView(row)
-        currentMessageView = row
     }
 
     private fun showAssistantResponse(message: String) {
@@ -695,7 +692,6 @@ class OverlayService : Service() {
         row.addView(icon)
         row.addView(text)
         messagesContainer.addView(row)
-        currentMessageView = row
         clovaTTS(message)
     }
 
@@ -707,7 +703,6 @@ class OverlayService : Service() {
             setPadding(60, 50, 60, 50)
         }
         messagesContainer.addView(text)
-        currentMessageView = text
     }
 
     private fun updateMicButton(recording: Boolean) {
