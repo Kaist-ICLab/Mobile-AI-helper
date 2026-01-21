@@ -19,6 +19,7 @@ import android.media.AudioRecord
 import android.media.ImageReader
 import android.media.MediaPlayer
 import android.media.MediaRecorder
+import android.media.MicrophoneInfo
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.net.Uri
@@ -36,6 +37,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -103,7 +105,7 @@ class OverlayService : Service() {
     // Store UI references for visibility toggling
     private lateinit var controlsLayout: LinearLayout
     private lateinit var minimizeButton: View
-    private lateinit var interveneButton : ImageButton
+    private lateinit var interveneButton : View
     private lateinit var repeatButton: ImageButton
 
     // Last assistant message for repeat functionality
@@ -112,8 +114,6 @@ class OverlayService : Service() {
     // Current MediaPlayer for TTS (to stop when mic clicked)
     private var currentMediaPlayer: MediaPlayer? = null
 
-    // Resize threshold in pixels (calculated from dp)
-    private var resizeThresholdPx = 0
 
     // Wizard Chat Client
     private var wizardClient: WizardConsoleClient? = null
@@ -131,8 +131,10 @@ class OverlayService : Service() {
 
     companion object {
         private const val TAG = "OverlayService"
-        private const val MIN_CHAT_HEIGHT = ViewGroup.LayoutParams.WRAP_CONTENT
+        private const val MIN_CHAT_HEIGHT = WindowManager.LayoutParams.WRAP_CONTENT
         private const val MAX_CHAT_HEIGHT = WindowManager.LayoutParams.MATCH_PARENT
+        private const val MIN_CHAT_WIDTH = WindowManager.LayoutParams.WRAP_CONTENT
+        private const val MAX_CHAT_WIDTH = WindowManager.LayoutParams.MATCH_PARENT
         private const val RESIZE_THRESHOLD_DP = 20  // Edge detection zone in dp
 
     }
@@ -358,8 +360,6 @@ class OverlayService : Service() {
     private fun showChatWindow() {
         if (chatView != null) return
 
-        // Calculate resize threshold in pixels from dp
-        resizeThresholdPx = (RESIZE_THRESHOLD_DP * resources.displayMetrics.density).toInt()
 
         val chatLayout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -378,10 +378,17 @@ class OverlayService : Service() {
                 cornerRadii = floatArrayOf(40f, 40f, 40f, 40f, 0f, 0f, 0f, 0f)
                 setColor(0xFF42A5F5.toInt())
             }
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
             setPadding(24, 24, 24, 20)
         }
 
-        val topRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        val topRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+        }
+        val topRow2 = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_HORIZONTAL or Gravity.TOP
+        }
 
         minimizeButton = TextView(this).apply {
             text = "💬"
@@ -394,14 +401,14 @@ class OverlayService : Service() {
                 toggleMinimize()
             }
         }
-        val titleText = TextView(this).apply {
+        titleView = TextView(this).apply {
             text = "AI 도우미"
             textSize = 24f
+            maxLines = 1
             setTextColor(Color.WHITE)
             setTypeface(null, android.graphics.Typeface.BOLD)
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
-        titleView = titleText
         repeatButton = ImageButton(this).apply {
             setImageResource(android.R.drawable.ic_menu_rotate)
             setBackgroundColor(Color.TRANSPARENT)
@@ -418,10 +425,12 @@ class OverlayService : Service() {
             isEnabled = false
             alpha = 0.3f
         }
-        interveneButton = ImageButton(this).apply {
-            setImageResource(android.R.drawable.ic_media_pause)
-            setBackgroundColor(Color.TRANSPARENT)
-            setColorFilter(Color.WHITE)
+        interveneButton = Button(this).apply {
+            text = "일시 중지"
+            textSize = 20f
+            setPadding(16, 12, 16, 12)
+            setTextColor(0xFFFFFFFF.toInt())
+            setBackgroundColor(0xFFD32F2F.toInt())
             setOnClickListener {
                 performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                 if(isMinimized){
@@ -441,46 +450,14 @@ class OverlayService : Service() {
             }
         }
         topRow.addView(minimizeButton)
-        topRow.addView(titleText)
-        topRow.addView(interveneButton)
+        topRow.addView(titleView)
         topRow.addView(repeatButton)
         topRow.addView(closeButton)
+        topRow2.addView(interveneButton)
 
         headerLayout.addView(topRow)
+        headerLayout.addView(topRow2)
 
-        // Add touch listener for drag-move only (header moves window)
-        headerLayout.setOnTouchListener(object : View.OnTouchListener {
-            override fun onTouch(v: View?, event: MotionEvent): Boolean {
-                if (chatLayoutParams == null || isMinimized) return false
-
-                when (event.action) {
-                    MotionEvent.ACTION_DOWN -> {
-                        headerLastY = chatLayoutParams!!.y
-                        headerTouchedY = event.rawY
-                        isDraggingMove = false
-                        return true
-                    }
-
-                    MotionEvent.ACTION_MOVE -> {
-                        val deltaY = event.rawY - headerTouchedY
-
-                        if (kotlin.math.abs(deltaY) > 10) {
-                            // MOVE MODE: Adjust window position
-                            isDraggingMove = true
-                            chatLayoutParams!!.y = headerLastY - deltaY.toInt()
-                            windowManager.updateViewLayout(chatView, chatLayoutParams)
-                        }
-                        return true
-                    }
-
-                    MotionEvent.ACTION_UP -> {
-                        isDraggingMove = false
-                        return true
-                    }
-                }
-                return false
-            }
-        })
 
         messagesScroll = ScrollView(this).apply {
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f)
@@ -548,7 +525,7 @@ class OverlayService : Service() {
                         val deltaX = event.rawX - touchedX
                         val deltaY = event.rawY - touchedY
                         if (kotlin.math.abs(deltaX) > 10 || kotlin.math.abs(deltaY) > 10) isDragging = true
-                        chatLayoutParams!!.x = lastX - deltaX.toInt()
+                        chatLayoutParams!!.x = lastX + deltaX.toInt()
                         chatLayoutParams!!.y = lastY + deltaY.toInt()
                         windowManager.updateViewLayout(chatView, chatLayoutParams)
                         return true
@@ -594,6 +571,7 @@ class OverlayService : Service() {
 
             interveneButton.visibility = View.VISIBLE
             chatLayoutParams!!.height = MIN_CHAT_HEIGHT
+            chatLayoutParams!!.width = MIN_CHAT_WIDTH
             titleView.text = "작동중"
         } else {
             // Restore full view
@@ -601,8 +579,10 @@ class OverlayService : Service() {
             if (::controlsLayout.isInitialized) {
                 controlsLayout.visibility = View.VISIBLE
             }
+
             interveneButton.visibility = View.GONE
             chatLayoutParams!!.height = MAX_CHAT_HEIGHT
+            chatLayoutParams!!.width = MAX_CHAT_WIDTH
             titleView.text = "AI 도우미"
         }
 
