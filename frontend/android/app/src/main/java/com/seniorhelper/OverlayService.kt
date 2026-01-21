@@ -436,7 +436,7 @@ class OverlayService : Service() {
             setTextColor(0xFFFFFFFF.toInt())
             setBackgroundColor(0xFFD32F2F.toInt())
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                setMargins(20,0,20,0)
+                setMargins(10,0,10,0)
             }
             setOnClickListener {
                 performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
@@ -506,7 +506,7 @@ class OverlayService : Service() {
         chatLayoutParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT, currentChatHeight,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY else WindowManager.LayoutParams.TYPE_PHONE,
-            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
             PixelFormat.TRANSLUCENT
         )
         chatLayoutParams!!.gravity = Gravity.TOP
@@ -535,13 +535,6 @@ class OverlayService : Service() {
                         chatLayoutParams!!.x = lastX + deltaX.toInt()
                         chatLayoutParams!!.y = lastY + deltaY.toInt()
                         windowManager.updateViewLayout(chatView, chatLayoutParams)
-                        return true
-                    }
-                    MotionEvent.ACTION_UP -> {
-                        if (!isDragging) {
-                            chatLayout.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                            toggleChatWindow()
-                        }
                         return true
                     }
                 }
