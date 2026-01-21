@@ -46,6 +46,9 @@ import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.cardview.widget.CardView
+import androidx.core.view.marginLeft
+import androidx.core.view.marginRight
+import androidx.core.view.setMargins
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -407,6 +410,7 @@ class OverlayService : Service() {
             maxLines = 1
             setTextColor(Color.WHITE)
             setTypeface(null, android.graphics.Typeface.BOLD)
+            setPadding(20,0,20,0)
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
         repeatButton = ImageButton(this).apply {
@@ -423,7 +427,7 @@ class OverlayService : Service() {
             }
             // Initially disabled until assistant sends a message
             isEnabled = false
-            alpha = 0.3f
+            alpha = 1f
         }
         interveneButton = Button(this).apply {
             text = "일시 중지"
@@ -431,6 +435,9 @@ class OverlayService : Service() {
             setPadding(16, 12, 16, 12)
             setTextColor(0xFFFFFFFF.toInt())
             setBackgroundColor(0xFFD32F2F.toInt())
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                setMargins(20,0,20,0)
+            }
             setOnClickListener {
                 performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                 if(isMinimized){
@@ -451,9 +458,9 @@ class OverlayService : Service() {
         }
         topRow.addView(minimizeButton)
         topRow.addView(titleView)
+        topRow.addView(interveneButton)
         topRow.addView(repeatButton)
         topRow.addView(closeButton)
-        topRow2.addView(interveneButton)
 
         headerLayout.addView(topRow)
         headerLayout.addView(topRow2)
