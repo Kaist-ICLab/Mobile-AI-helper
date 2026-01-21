@@ -146,8 +146,8 @@ class OverlayService : Service() {
         try {
             // 1. Initial Start: Microphone ONLY
             updateForegroundService(enableScreenShare = false)
-
             windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+            showBubble()
 
         } catch (e: Exception) {
             Log.e(TAG, "Error in onCreate", e)
@@ -158,7 +158,6 @@ class OverlayService : Service() {
         sessionId = intent?.getStringExtra("sessionID")!!
         try {
             connectToWizardConsole()
-            showBubble()
         }
         catch (e : Exception){
             Log.e(TAG, "Error on starting command")
@@ -372,7 +371,7 @@ class OverlayService : Service() {
             background = drawable
             clipToOutline = true
         }
-
+        
         val headerLayout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             background = GradientDrawable().apply {
@@ -559,7 +558,7 @@ class OverlayService : Service() {
 
             interveneButton.visibility = View.VISIBLE
             chatLayoutParams!!.height = MIN_CHAT_HEIGHT
-            titleView.text = "AI가 일하는 중..."
+            titleView.text = "작동중"
         } else {
             // Restore full view
             messagesScroll.visibility = View.VISIBLE
