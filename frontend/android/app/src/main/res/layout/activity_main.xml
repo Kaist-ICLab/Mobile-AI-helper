@@ -9,38 +9,39 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Mobile AI Helper"
+        android:layout_marginBottom="16dp"
+        android:text="휴대폰 사용 AI 도우미"
         android:textSize="32sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="16dp" />
+        android:textStyle="bold" />
 
     <TextView
+        android:id="@+id/sessionIdDisplayText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="32dp"
         android:text="Control Panel"
-        android:textSize="16sp"
-        android:layout_marginBottom="32dp" />
+        android:textSize="16sp" />
 
     <Button
         android:id="@+id/startButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Start Voice Helper"
+        android:layout_marginBottom="16dp"
         android:backgroundTint="#2196F3"
-        android:textColor="#FFFFFF"
-        android:textSize="18sp"
         android:padding="16dp"
-        android:layout_marginBottom="16dp" />
+        android:text="ai 도우미 키기"
+        android:textColor="#FFFFFF"
+        android:textSize="18sp" />
 
 
     <Button
         android:id="@+id/stopButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Stop Help"
         android:backgroundTint="#F44336"
+        android:padding="16dp"
+        android:text="AI 도우미 끄기"
         android:textColor="#FFFFFF"
-        android:textSize="18sp"
-        android:padding="16dp" />
+        android:textSize="18sp" />
 
 </LinearLayout>
