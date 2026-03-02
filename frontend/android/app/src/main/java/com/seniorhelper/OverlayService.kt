@@ -773,6 +773,11 @@ class OverlayService : Service() {
                 var speechBuffer = ByteArrayOutputStream()  // Accumulates audio during speech
                 var lastSpeechTime = 0L    // Last time speech was detected
 
+                
+                val preSpeechCapacity = SAMPLE_RATE * 2  
+                val preSpeechRing = java.util.LinkedList<ByteArray>()
+                var preSpeechSize = 0
+
                 while (isContinuousListening) {
                     val currentRecorder = recorder ?: break
                     val read = currentRecorder.read(tempBuf, 0, tempBuf.size)
@@ -790,6 +795,9 @@ class OverlayService : Service() {
                             speechBuffer = ByteArrayOutputStream()
                             isSpeaking = false
                         }
+                    
+                        preSpeechRing.clear()
+                        preSpeechSize = 0
                         continue
                     }
 
@@ -801,6 +809,13 @@ class OverlayService : Service() {
                             isSpeaking = true
                             speechStartTime = now
                             speechBuffer = ByteArrayOutputStream()
+
+                            for (chunk in preSpeechRing) {
+                                speechBuffer.write(chunk)
+                            }
+                            preSpeechRing.clear()
+                            preSpeechSize = 0
+
                             onSpeechStart()
                         }
 
@@ -836,6 +851,15 @@ class OverlayService : Service() {
 
                             speechBuffer = ByteArrayOutputStream()
                             isSpeaking = false
+                        }
+                    }
+
+                    if (!isSpeaking) {
+                        val chunk = tempBuf.copyOf(read)
+                        preSpeechRing.add(chunk)
+                        preSpeechSize += read
+                        while (preSpeechSize > preSpeechCapacity && preSpeechRing.isNotEmpty()) {
+                            preSpeechSize -= preSpeechRing.removeFirst().size
                         }
                     }
                 }
