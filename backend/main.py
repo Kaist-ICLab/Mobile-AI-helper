@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import Dict, Optional, List
 import logging
@@ -23,7 +24,9 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Senior Helper WOZ API", version="1.0.0")
+app = FastAPI(title="Mobile AI Helper WOZ API", version="1.0.0")
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.add_middleware(
     CORSMiddleware,
@@ -85,7 +88,7 @@ def _debug_routes():
 @app.get("/")
 async def root():
     return {
-        "service": "Senior Helper WOZ API",
+        "service": "Mobile AI Helper WOZ API",
         "version": "1.0.0",
         "endpoints": ["/message", "/log", "/sessions"]
     }
@@ -111,8 +114,16 @@ async def handle_message(request: MessageRequest):
         
         logger.info(f"Session {request.session_id} - {request.role}: {request.text}")
         
-        # ONLY return automated response if role is "user" AND you want auto-replies
-        # For pure Wizard-of-Oz, we DON'T auto-reply
+        # Notify wizard via WebSocket for instant updates
+        wizard_key = f"wizard_{request.session_id}"
+        if wizard_key in manager.active_connections:
+            try:
+                await manager.active_connections[wizard_key].send_text(
+                    json.dumps({"type": "new_message", "role": request.role})
+                )
+            except Exception:
+                pass
+        
         if request.role == "user":
             reply = "Message received. A wizard will respond shortly."
         else:
@@ -314,7 +325,7 @@ def get_task_flows():
     return _load_task_steps_file()
 
 @app.put("/api/task-flows/tasks/{task_id}/steps/{step_number}")
-def update_task_step(task_id: str, step_number: int, patch: TaskStepUpdate):
+def update_task_step(task_id: str, step_number: str, patch: TaskStepUpdate): 
     """Update a specific step within a task"""
     data = _load_task_steps_file()
     tasks = data.get("tasks", [])
@@ -323,7 +334,7 @@ def update_task_step(task_id: str, step_number: int, patch: TaskStepUpdate):
         if task.get("id") == task_id:
             steps = task.get("steps", [])
             for step in steps:
-                if step.get("step") == step_number:
+                if str(step.get("step")) == str(step_number):
                     if patch.title_en is not None:
                         step["title_en"] = patch.title_en
                     if patch.say_ko is not None:

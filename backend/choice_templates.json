@@ -36,11 +36,11 @@
       "name": "YouTube search: 오늘 날씨 — Top 5 results",
       "prompt": "어떤 영상을 보시겠어요?",
       "options": [
-        "오늘 날씨 예보 | 기상청",
-        "날씨뉴스: 오늘의 날씨 한눈에 보기",
-        "오늘 전국 날씨/미세먼지 예보",
-        "아침 날씨 브리핑 (오늘/내일)",
-        "오늘 날씨 총정리 (지역별)"
+        "연합뉴스TV: 영하 10도 안팎 강추위 계속",
+        "KBS News: 이번 주 강추위 계속",
+        "SBS 뉴스: 이번 주도 한파 계속된다...",
+        "MBC 뉴스: 당분간 중부 중심 강추위",
+        "MBN 뉴스: 추위 속 밤사이 서쪽 눈"
       ],
       "links": [
         {
@@ -50,16 +50,35 @@
       ]
     },
     {
+      "id": "contents_youtube_hero_top5",
+      "category": "contents_viewing",
+      "name": "YouTube search: 임영웅 — Top 5 results",
+      "prompt": "어떤 영상을 보시겠어요?",
+      "options": [
+        "임영웅 콘서트💕마음이 편안해지는 임영웅의 30곡 리스트💫",
+        "사랑의 콜센타 임영웅 노래모음 ⭐2시간 연속듣기⭐",
+        "임영웅 히트곡 연속듣기♥",
+        "𝒑𝒍𝒂𝒚𝒍𝒊𝒔𝒕 연말 연초, 온기 가득한 HOME의 순간을 기록하는 Polaroid같은 플레이리스트 | IM HERO 2",
+        "힐링 타임☕ 임영웅 베스트 30곡 콘서트!"
+      ],
+      "links": [
+        {
+          "task_id": "find_a_video_and_subscribe_to_a_channel",
+          "step": "4-2"
+        }
+      ]
+    },
+    {
       "id": "contents_youtube_gangnamstyle_top5",
       "category": "contents_viewing",
       "name": "YouTube search: 강남스타일 — Top 5 results",
-      "prompt": "어떤 영상을 보시겠어요?",
+      "prompt": "여기에서 하나 선택해 주세요. 직접 화면을 누르셔도 되고 저에게 말씀해주셔도 됩니다.",
       "options": [
-        "PSY - 강남스타일 M/V",
-        "PSY - 강남스타일 라이브 무대",
-        "강남스타일 춤 배우기 (튜토리얼)",
-        "강남스타일 커버댄스 모음",
-        "강남스타일 리액션 영상"
+        "PSY - GANGNAM STYLE(강남스타일) M/V",
+        "싸이(PSY) - 강남스타일 [가사/Lyrics]",
+        "PSY(싸이) - 강남스타일(Gangnam Style) 1시간 반복(1h Repeat) [뮤비&가사 / MV&Lyrics]",
+        "PSY - GANGNAM STYLE (강남스타일) @ Seoul Plaza Live Concert",
+        "PSY_0729_SBS Inkigayo_GANGNAM STYLE (강남스타일)"
       ],
       "links": [
         {
@@ -72,13 +91,13 @@
       "id": "shopping_coupang_water_top5",
       "category": "shopping",
       "name": "Coupang search: 생수 — Top 5 results",
-      "prompt": "어떤 생수를 주문하시겠어요?",
+      "prompt": "검색 결과를 보여드릴게요. 어떤 생수를 주문하시겠어요?",
       "options": [
-        "삼다수 2L 6개입",
-        "아이시스 2L 6개입",
-        "백산수 2L 6개입",
-        "평창수 2L 6개입",
-        "제주퓨어워터 2L 6개입"
+        "탐사수 무라벨 2L, 36개",
+        "백산수 무라벨 생수, 500ML, 40개",
+        "몽베스트 위드어스 무라벨 생수, 1L. 36개",
+        "평창수 무라벨 생수, 2L, 36개",
+        "아이시스 8.0 ECO 생수 무라벨 1L, 12개"
       ],
       "links": [
         {
@@ -173,44 +192,16 @@
       ]
     },
     {
-      "id": "communication_contact_select_call_top3",
-      "category": "communication",
-      "name": "Make a call — Choose contact (Top 3)",
-      "prompt": "누구에게 전화하시겠어요?",
-      "options": [
-        "김민수",
-        "이서연",
-        "박지훈"
-      ],
-      "links": [
-        {
-          "task_id": "make_a_phone_call",
-          "step": "3"
-        }
-      ]
-    },
-    {
-      "id": "communication_contact_select_message_top3",
-      "category": "communication",
-      "name": "Send a message — Choose contact (Top 3)",
-      "prompt": "누구에게 메시지를 보내시겠어요?",
-      "options": [
-        "김민수",
-        "이서연",
-        "박지훈"
-      ]
-    },
-    {
       "id": "shopping_danawa_massagechair_top5",
       "category": "shopping",
       "name": "Danawa search: 안마의자 — Top 5 results",
-      "prompt": "어떤 안마의자를 비교해볼까요?",
+      "prompt": "가장 저렴한 안마의자들 입니다. 이 중에서 하나를 골라주세요",
       "options": [
-        "바디프랜드 팬텀2 안마의자",
-        "세라젬 마스터 V6",
+        "누하스 2021년형 뉴 클래식 N-0003H",
+        "브람스생활건강 올인",
+        "바디프렌드 팔콘 2026 VFR-7 220",
         "휴테크 카이 안마의자",
-        "코지마 오딧세이 안마의자",
-        "LG 힐링미 안마의자"
+        "코지마 오딧세이 안마의자"
       ],
       "links": [
         {

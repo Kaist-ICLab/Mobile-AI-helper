@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Optional
 import uuid
 import logging
 import json
@@ -14,6 +14,7 @@ router = APIRouter(prefix="/frequentResponse", tags=["frequentResponse"])
 # JSON 파일 경로
 DATA_FILE = Path("frequent_responses.json")
 TASK_CLASSIFICATIONS_FILE = Path("task_classifications.json")
+
 def load_task_classifications() -> List[Dict[str, str]]:
     """파일에서 task classifications를 로드합니다."""
     if TASK_CLASSIFICATIONS_FILE.exists():
@@ -82,6 +83,28 @@ def get_default_responses() -> List[Dict[str, str]]:
     ]
 
 
+def fix_order(data: List[Dict[str, str]]) -> List[Dict[str, str]]:
+    """같은 task classification 내에서 order를 재정렬합니다.
+    가장 낮은 order를 0으로 설정하고, 나머지는 상대 순서를 유지하면서 1, 2, 3...으로 재할당합니다.
+    """
+    # taskClassification별로 그룹화
+    classification_groups: Dict[str, List[Dict[str, str]]] = {}
+    for item in data:
+        classification = item.get("taskClassification", "")
+        if classification not in classification_groups:
+            classification_groups[classification] = []
+        classification_groups[classification].append(item)
+    
+    # 각 그룹 내에서 order 재정렬
+    for classification, items in classification_groups.items():
+        # order로 정렬 (낮은 순서부터)
+        items.sort(key=lambda x: x.get("order", 0))
+        # 가장 낮은 order를 0으로 시작하여 0, 1, 2, 3...으로 재할당
+        for index, item in enumerate(items):
+            item["order"] = index
+    
+    return data
+
 def save_responses(data: List[Dict[str, str]]):
     """frequent responses를 파일에 저장합니다."""
     try:
@@ -109,7 +132,7 @@ class FrequentResponseCreate(BaseModel):
     content: str
     order : int | None = None
 
-def find_frequent_response(id: str) -> Dict[str, str]:
+def find_frequent_response(id: str) -> Optional[Dict[str, str]]:
     for item in frequent_responses:
         if item["id"] == id:
             return item
@@ -123,7 +146,7 @@ async def list_frequent_responses():
 @router.post("", response_model=FrequentResponse, status_code=201)
 async def add_frequent_response(request: FrequentResponseCreate):
     sameTaskResponse = [r for r in frequent_responses if r["taskClassification"] == request.taskClassification];
-    if request.order != None:
+    if request.order is not None:
         for response in sameTaskResponse:
             if response["order"] >= request.order:
                 response["order"] += 1;
@@ -131,7 +154,7 @@ async def add_frequent_response(request: FrequentResponseCreate):
         "id": str(uuid.uuid4()),
         "taskClassification": request.taskClassification,
         "content": request.content,
-        "order": request.order if request.order else len(sameTaskResponse)
+        "order": request.order if request.order is not None else len(sameTaskResponse)
     }
     frequent_responses.append(new_item)
     save_responses(frequent_responses)
@@ -147,23 +170,24 @@ async def update_frequent_response(response_id: str, request: FrequentResponseCr
     if not targetItem:
         raise HTTPException(status_code=404, detail="Frequent response not found");
 
-    if request.order != None:
+    if request.order is not None:
         print("request.order", request.order)
         previousOrder = targetItem["order"]
         currentOrder = request.order
         print("change status", previousOrder, currentOrder)
+        sameTaskResponses = [r for r in frequent_responses if r["taskClassification"] == targetItem["taskClassification"]]
         if previousOrder > currentOrder:
-            for response in frequent_responses:
+            for response in sameTaskResponses:
                 if response["order"] < previousOrder and response["order"] >= currentOrder:
                     response["order"] += 1;
         elif previousOrder < currentOrder:
-            for response in frequent_responses:
+            for response in sameTaskResponses:
                 if response["order"] > previousOrder and response["order"] <= currentOrder:
                     response["order"] -= 1;
 
     targetItem["taskClassification"] = request.taskClassification
     targetItem["content"] = request.content
-    targetItem["order"] = request.order if request.order != None else targetItem["order"]
+    targetItem["order"] = request.order if request.order is not None else targetItem["order"]
     save_responses(frequent_responses)
     logger.info(f"Frequent response updated: {targetItem}")
     return targetItem
@@ -173,9 +197,13 @@ async def update_frequent_response(response_id: str, request: FrequentResponseCr
 async def delete_frequent_response(response_id: str):
     for idx, item in enumerate(frequent_responses):
         if item["id"] == response_id:
+            deleted_task = item["taskClassification"]
+            deleted_order = item["order"]
             frequent_responses.pop(idx)
-            for i in range(idx, len(frequent_responses)):
-                frequent_responses[i]["order"] -= 1
+            # Only adjust order for items in the same task classification
+            for r in frequent_responses:
+                if r["taskClassification"] == deleted_task and r["order"] > deleted_order:
+                    r["order"] -= 1
             save_responses(frequent_responses)
             logger.info(f"Frequent response deleted: {response_id}")
             return {"status": "deleted", "id": response_id}
