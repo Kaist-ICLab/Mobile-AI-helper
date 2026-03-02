@@ -19,14 +19,16 @@ function showSpeakingIndicator() {
     const indicator = document.getElementById('speakingIndicator');
     indicator.classList.add('active');
 
-    // Scroll to bottom so indicator is visible
     const container = document.getElementById('messagesContainer');
     container.scrollTop = container.scrollHeight;
 
-    speakingTimerInterval = setInterval(() => {
+    if (speakingTimerInterval) clearInterval(speakingTimerInterval);
+    const updateTimer = () => {
     const elapsed = Math.floor((Date.now() - speakingStartTime) / 1000);
     document.getElementById('speakingTimer').textContent = elapsed + 's';
-    }, 100);
+    };
+    updateTimer();
+    speakingTimerInterval = setInterval(updateTimer, 100);
 }
 
 function hideSpeakingIndicator() {
@@ -77,12 +79,12 @@ const newResponseContent = document.getElementById('newResponseContent');
 // ==================== TUTORIAL SYSTEM ====================
 let currentTutorialStep = 0;
 const tutorialSteps = [
-    { step: 1, total: 6, title_ko: "도움말", body_ko: "안녕하세요! 저는 당신이 휴대폰을 편하게 사용할 수 있도록 도와주는 AI입니다." },
-    { step: 2, total: 6, title_ko: "도움말", body_ko: "휴대폰으로 하시고 싶으신 일이 있으시다면 오른쪽 아래의 마이크 버튼을 누르고 말씀해주세요. 다 말씀하셨다면 마이크 버튼을 다시 눌러주세요." },
-    { step: 3, total: 6, title_ko: "도움말", body_ko: "요청하신 내용을 제가 제대로 이해했는지 확인한 이후에, 휴대폰 사용을 도와드릴게요." },
-    { step: 4, total: 6, title_ko: "도움말", body_ko: "가끔, 사용자분께 직접 휴대폰 조작하셔야 할 때가 있어요. 그럴 때는, 제가 \"어디를 누르세요\"라고 말씀드릴게요." },
-    { step: 5, total: 6, title_ko: "도움말", body_ko: "혹시나 헷갈리거나 이해가 안되는 내용이 있으시면, 제게 말씀해주시면 안내드리겠습니다." },
-    { step: 6, total: 6, title_ko: "도움말", body_ko: "상단의 반복 버튼을 누르면 제가 말씀 드린 내용을 다시 들을 수 있어요." },
+    { step: 1, total: 7, title_ko: "도움말", body_ko: "안녕하세요! 저는 당신이 휴대폰을 편하게 사용할 수 있도록 도와주는 AI입니다." },
+    { step: 2, total: 7, title_ko: "도움말", body_ko: "휴대폰으로 하고 싶은 일이 있으시면 그냥 말씀해 주세요. 제가 답해 드릴게요." },
+    { step: 3, total: 7, title_ko: "도움말", body_ko: "요청하신 내용을 제가 제대로 이해했는지 확인한 이후에, 휴대폰 사용을 도와드릴게요." },
+    { step: 4, total: 7, title_ko: "도움말", body_ko: "가끔, 사용자분께 직접 휴대폰 조작하셔야 할 때가 있어요. 그럴 때는, 제가 \"어디를 누르세요\"라고 말씀드릴게요." },
+    { step: 5, total: 7, title_ko: "도움말", body_ko: "혹시나 헷갈리거나 이해가 안되는 내용이 있으시면, 제게 말씀해주시면 안내드리겠습니다." },
+    { step: 6, total: 7, title_ko: "도움말", body_ko: "상단의 반복 버튼을 누르면 제가 말씀 드린 내용을 다시 들을 수 있어요." },
     { step: 7, total: 7, title_ko: "도움말", body_ko: "혹시나 제가 도와드리는 동안 중간에 불편한 점이 생기시거나, 설명이 필요하신 부분이 있으시면, 위의 일시정지 버튼을 눌러서 알려주시면 도와드리겠습니다." }
 
 ];
@@ -546,7 +548,7 @@ function displayTaskSteps() {
         cancelBtn.onclick = (e) => cancelStepEdit(e, stepId);
     }
 
-    // Click to select step (but not when clicking edit buttons or textarea)
+    // Click to select step 
     div.onclick = (e) => {
         if (e.target.closest('.task-step-edit-btn') || e.target.closest('.task-step-save-btn') || e.target.closest('.task-step-cancel-btn') || e.target.closest('.task-step-edit-area') || e.target.tagName === 'TEXTAREA') return;
         selectStep(step);
@@ -744,6 +746,13 @@ function connectWebSocket(sessionId) {
         try {
         const data = JSON.parse(event.data);
         if (data.type === 'new_message') {
+            if (data.event_data && data.event_data.type === 'event') {
+            if (data.event_data.event === 'speaking_started' && !isUserSpeaking) {
+                showSpeakingIndicator();
+            } else if (data.event_data.event === 'speaking_stopped' && isUserSpeaking) {
+                hideSpeakingIndicator();
+            }
+            }
             loadMessages();
         }
         } catch (e) {
@@ -752,7 +761,6 @@ function connectWebSocket(sessionId) {
     }
     };
     ws.onclose = function() {
-    // Reconnect after delay if still in a session
     setTimeout(() => {
         if (currentSessionId === sessionId) connectWebSocket(sessionId);
     }, 3000);
@@ -866,30 +874,10 @@ function displayMessages(messages) {
         const div = document.createElement('div');
         div.className = 'message tutorial';
 
-        let actionText = '';
-        if (tutorialData.action === 'show') actionText = '📚 Tutorial Started';
-        else if (tutorialData.action === 'next' || tutorialData.action === 'update') actionText = '➡️ Tutorial Step Updated';
-        else if (tutorialData.action === 'hide') actionText = '✖️ Tutorial Hidden';
-
         if (tutorialData.action === 'hide') {
-        div.innerHTML = `
-            ${gapHtml}
-            <div class="message-meta">Tutorial Command</div>
-            <div class="tutorial-action">${escapeHtml(actionText)}</div>
-            <div class="message-timestamp">${formatTimestamp(msg.timestamp)}</div>
-        `;
+        div.innerHTML = `${gapHtml}Tutorial Hidden <div class="message-timestamp" style="text-align:left;">${formatTimestamp(msg.timestamp)}</div>`;
         } else {
-        div.innerHTML = `
-            ${gapHtml}
-            <div class="message-meta">Tutorial Command</div>
-            <div>
-            <span class="tutorial-step-badge">Step ${escapeHtml(String(tutorialData.step))}/${escapeHtml(String(tutorialData.total))}</span>
-            <span class="tutorial-action">${escapeHtml(actionText)}</span>
-            </div>
-            <div class="tutorial-title">${escapeHtml(tutorialData.title_ko || '')}</div>
-            <div class="tutorial-body">${escapeHtml(tutorialData.body_ko || '')}</div>
-            <div class="message-timestamp">${formatTimestamp(msg.timestamp)}</div>
-        `;
+        div.innerHTML = `${gapHtml}<strong>${escapeHtml(tutorialData.title_ko || '도움말')} ${escapeHtml(String(tutorialData.step))}/${escapeHtml(String(tutorialData.total || 7))}</strong><br>${escapeHtml(tutorialData.body_ko || '')} <div class="message-timestamp" style="text-align:left;">${formatTimestamp(msg.timestamp)}</div>`;
         }
 
         container.appendChild(div);

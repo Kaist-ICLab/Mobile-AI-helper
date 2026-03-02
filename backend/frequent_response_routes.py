@@ -200,7 +200,6 @@ async def delete_frequent_response(response_id: str):
             deleted_task = item["taskClassification"]
             deleted_order = item["order"]
             frequent_responses.pop(idx)
-            # Only adjust order for items in the same task classification
             for r in frequent_responses:
                 if r["taskClassification"] == deleted_task and r["order"] > deleted_order:
                     r["order"] -= 1

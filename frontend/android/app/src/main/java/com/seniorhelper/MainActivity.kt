@@ -8,13 +8,17 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.Button
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import kotlin.random.Random
 
 class MainActivity : AppCompatActivity() {
+
+    private lateinit var sessionTextView: TextView
 
     companion object {
         private const val MICROPHONE_REQ_CODE = 1002
@@ -46,6 +50,7 @@ class MainActivity : AppCompatActivity() {
             stopService(Intent(this, OverlayService::class.java))
             Toast.makeText(this, "Help Stopped", Toast.LENGTH_SHORT).show()
         }
+        sessionTextView = findViewById<TextView>(R.id.sessionIdDisplayText)
     }
 
     // --- Standard Permissions Logic ---
@@ -58,15 +63,22 @@ class MainActivity : AppCompatActivity() {
         }
         startOverlayService()
     }
-
+    
     private fun startOverlayService() {
-        val serviceIntent = Intent(this, OverlayService::class.java)
+       fun generateSessionId(): String {
+            return Random.nextInt(1000, 9999).toString()
+        }
+        val generatedSessionNumber : String = generateSessionId()
+        val serviceIntent = Intent(this, OverlayService::class.java).apply {
+            putExtra("sessionID", generatedSessionNumber)
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForegroundService(serviceIntent)
         } else {
             startService(serviceIntent)
         }
-        Toast.makeText(this, "Voice Helper Started", Toast.LENGTH_SHORT).show()
+        sessionTextView.text = generatedSessionNumber
+        Toast.makeText(this, "세션 : $generatedSessionNumber 에서 도우미가 활성화되었습니다.", Toast.LENGTH_SHORT).show()
     }
 
     // --- Boilerplate Permission Helpers ---

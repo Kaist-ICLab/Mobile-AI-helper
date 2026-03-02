@@ -118,8 +118,16 @@ async def handle_message(request: MessageRequest):
         wizard_key = f"wizard_{request.session_id}"
         if wizard_key in manager.active_connections:
             try:
+                ws_payload = {"type": "new_message", "role": request.role}
+                if request.role == "system":
+                    try:
+                        event_data = json.loads(request.text)
+                        if isinstance(event_data, dict) and event_data.get("type") == "event":
+                            ws_payload["event_data"] = event_data
+                    except (json.JSONDecodeError, TypeError, ValueError):
+                        pass
                 await manager.active_connections[wizard_key].send_text(
-                    json.dumps({"type": "new_message", "role": request.role})
+                    json.dumps(ws_payload)
                 )
             except Exception:
                 pass

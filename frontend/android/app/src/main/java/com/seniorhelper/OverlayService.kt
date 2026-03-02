@@ -27,14 +27,15 @@ import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
+import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
-import android.widget.Toast
 import androidx.cardview.widget.CardView
+import androidx.core.view.setMargins
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -63,8 +64,11 @@ class OverlayService : Service() {
 
     private lateinit var messagesContainer: LinearLayout
     private lateinit var messagesScroll: ScrollView
-    private lateinit var sessionIdText: TextView
-    private var currentMessageView: View? = null
+    private lateinit var titleView: TextView
+
+    // Chat list state
+    private var agentResponseViewList = mutableListOf<View>()
+    private var userStatusViewList = mutableListOf<View>()
 
     // Tutorial State
     private var isTutorialVisible = false
@@ -76,40 +80,25 @@ class OverlayService : Service() {
     private var hiddenMessages = mutableListOf<View>()
 
     // Chat window state
-    private var currentChatHeight = 1500
     private var isMinimized = false
     private var chatLayoutParams: WindowManager.LayoutParams? = null
-
-    // Header drag state
-    private var headerLastY = 0
-    private var headerTouchedY = 0f
-    private var isDraggingResize = false
-    private var isDraggingMove = false
-    private var dragStartHeight = 0
+    private var maxChatHeight = WindowManager.LayoutParams.MATCH_PARENT
 
     // Store UI references for visibility toggling
-
-    private lateinit var minimizeButton: ImageButton
+    private lateinit var minimizeButton: View
+    private lateinit var interveneButton: View
     private lateinit var repeatButton: ImageButton
-    private lateinit var topResizeHandle: View
-    private lateinit var bottomResizeHandle: View
 
     // Last assistant message for repeat functionality
     private var lastAssistantMessage: String? = null
 
-    // Current MediaPlayer for TTS (to stop when mic clicked)
+    // Current MediaPlayer for TTS 
     private var currentMediaPlayer: MediaPlayer? = null
-
-    // Resize threshold in pixels (calculated from dp)
-    private var resizeThresholdPx = 0
 
     // Wizard Chat Client
     private var wizardClient: WizardConsoleClient? = null
-    private val sessionId = generateSessionId()
+    private var sessionId: String = "-1"
     private val mainHandler = Handler(Looper.getMainLooper())
-    private var wizardSocketConnected: Boolean = false
-    private var sessionPaired: Boolean = false
-
     // Audio Recording
     private var recorder: AudioRecord? = null
     private var isRecording = false
@@ -125,9 +114,9 @@ class OverlayService : Service() {
 
     companion object {
         private const val TAG = "OverlayService"
-        private const val MIN_CHAT_HEIGHT = 800
-        private const val MAX_CHAT_HEIGHT = 1500
-        private const val RESIZE_THRESHOLD_DP = 20  // Edge detection zone in dp
+        private const val MIN_CHAT_HEIGHT = WindowManager.LayoutParams.WRAP_CONTENT
+        private const val MIN_CHAT_WIDTH = WindowManager.LayoutParams.WRAP_CONTENT
+        private const val MAX_CHAT_WIDTH = WindowManager.LayoutParams.MATCH_PARENT
 
         // Voice Activity Detection thresholds
         private const val VAD_SPEECH_THRESHOLD = 800     // RMS amplitude to detect speech
@@ -135,9 +124,6 @@ class OverlayService : Service() {
         private const val VAD_MIN_SPEECH_MS = 300L        // Ignore very short bursts (noise)
         private const val VAD_MAX_UTTERANCE_MS = 60000L   // Auto-split at 60s (CLOVA CSR limit)
 
-        private fun generateSessionId(): String {
-            return Random.nextInt(1000, 9999).toString()
-        }
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -147,12 +133,19 @@ class OverlayService : Service() {
     override fun onCreate() {
         super.onCreate()
         try {
-            // 1. Initial Start: Microphone ONLY
             updateForegroundService(enableScreenShare = false)
 
             windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
 
-            connectToWizardConsole()
+            // //Overlay window size
+            // val displayMetrics = DisplayMetrics()
+            // @Suppress("DEPRECATION")
+            // windowManager.defaultDisplay.getMetrics(displayMetrics)
+            // // 60% of screen height 
+            // maxChatHeight = (displayMetrics.heightPixels * 0.6).toInt()
+            // Full screen window
+            maxChatHeight = WindowManager.LayoutParams.MATCH_PARENT
+
             showBubble()
 
             // Start always-on mic
@@ -163,6 +156,12 @@ class OverlayService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        sessionId = intent?.getStringExtra("sessionID") ?: Random.nextInt(1000, 9999).toString()
+        try {
+            connectToWizardConsole()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error on starting command", e)
+        }
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -217,6 +216,10 @@ class OverlayService : Service() {
             sessionId = sessionId,
             onMessageReceived = { message ->
                 mainHandler.post {
+                    // Auto-open chat window if not yet visible so the first message isn't lost
+                    if (!isChatVisible) {
+                        showChatWindow()
+                    }
                     if (::messagesContainer.isInitialized) {
                         handleWizardPayload(message)
                         // Only scroll down if not showing tutorial (tutorial scrolls to top)
@@ -228,10 +231,6 @@ class OverlayService : Service() {
             },
             onConnectionStatusChanged = { _ ->
                 mainHandler.post {
-                    if(::sessionIdText.isInitialized) {
-                        // Keep white regardless of connection status
-                        sessionIdText.setTextColor(Color.WHITE)
-                    }
                 }
             }
         )
@@ -260,7 +259,6 @@ class OverlayService : Service() {
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
             else
                 WindowManager.LayoutParams.TYPE_PHONE,
-            // UPDATED FLAGS:
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                     WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
                     WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
@@ -336,9 +334,6 @@ class OverlayService : Service() {
     private fun showChatWindow() {
         if (chatView != null) return
 
-        // Calculate resize threshold in pixels from dp
-        resizeThresholdPx = (RESIZE_THRESHOLD_DP * resources.displayMetrics.density).toInt()
-
         val chatLayout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             val drawable = GradientDrawable().apply {
@@ -357,17 +352,54 @@ class OverlayService : Service() {
                 cornerRadii = floatArrayOf(40f, 40f, 40f, 40f, 0f, 0f, 0f, 0f)
                 setColor(0xFF42A5F5.toInt())
             }
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
             setPadding(24, 24, 24, 20)
         }
 
-        val topRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        val titleText = TextView(this).apply {
-            text = "💬 Helper Chat"
-            textSize = 24f
+        val topRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        minimizeButton = TextView(this).apply {
+            text = "\uD83D\uDCAC"
+            textSize = 28f
             setTextColor(Color.WHITE)
             setTypeface(null, android.graphics.Typeface.BOLD)
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            setOnClickListener {
+                performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                toggleMinimize()
+            }
+        }
+        titleView = TextView(this).apply {
+            text = "AI 도우미"
+            textSize = 28f
+            maxLines = 1
+            setTextColor(Color.WHITE)
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            setPadding(20, 0, 20, 0)
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
+        interveneButton = Button(this).apply {
+            text = "일시 중지"
+            textSize = 20f
+            setPadding(16, 12, 16, 12)
+            setTextColor(0xFFFFFFFF.toInt())
+            setBackgroundColor(0xFFD32F2F.toInt())
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                setMargins(10, 0, 10, 0)
+            }
+            setOnClickListener {
+                performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                if (isMinimized) {
+                    toggleMinimize()
+                }
+                if (::messagesContainer.isInitialized) {
+                    clearMessage()
+                }
+            }
+        }
+        interveneButton.visibility = View.GONE
         repeatButton = ImageButton(this).apply {
             setImageResource(android.R.drawable.ic_menu_rotate)
             setBackgroundColor(Color.TRANSPARENT)
@@ -375,27 +407,14 @@ class OverlayService : Service() {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { setMargins(8, 0, 8, 0) }
+            ).apply {}
             setOnClickListener {
                 performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                 repeatLastMessage()
             }
             // Initially disabled until assistant sends a message
             isEnabled = false
-            alpha = 0.3f
-        }
-        minimizeButton = ImageButton(this).apply {
-            setImageResource(android.R.drawable.ic_menu_upload)
-            setBackgroundColor(Color.TRANSPARENT)
-            setColorFilter(0xFFFFFFFF.toInt(), android.graphics.PorterDuff.Mode.SRC_IN)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { setMargins(8, 0, 8, 0) }
-            setOnClickListener {
-                performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                toggleMinimize()
-            }
+            alpha = 1f
         }
         val closeButton = ImageButton(this).apply {
             setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
@@ -406,53 +425,13 @@ class OverlayService : Service() {
                 hideChatWindow()
             }
         }
-        topRow.addView(titleText)
-        topRow.addView(repeatButton)
         topRow.addView(minimizeButton)
+        topRow.addView(titleView)
+        topRow.addView(interveneButton)
+        topRow.addView(repeatButton)
         topRow.addView(closeButton)
 
-        sessionIdText = TextView(this).apply {
-            text = "Session: $sessionId"
-            textSize = 14f
-            // Always white per request
-            setTextColor(Color.WHITE)
-        }
         headerLayout.addView(topRow)
-        headerLayout.addView(sessionIdText)
-
-        // Add touch listener for drag-move only (header moves window)
-        headerLayout.setOnTouchListener(object : View.OnTouchListener {
-            override fun onTouch(v: View?, event: MotionEvent): Boolean {
-                if (chatLayoutParams == null || isMinimized) return false
-
-                when (event.action) {
-                    MotionEvent.ACTION_DOWN -> {
-                        headerLastY = chatLayoutParams!!.y
-                        headerTouchedY = event.rawY
-                        isDraggingMove = false
-                        return true
-                    }
-
-                    MotionEvent.ACTION_MOVE -> {
-                        val deltaY = event.rawY - headerTouchedY
-
-                        if (kotlin.math.abs(deltaY) > 10) {
-                            // MOVE MODE: Adjust window position
-                            isDraggingMove = true
-                            chatLayoutParams!!.y = headerLastY - deltaY.toInt()
-                            windowManager.updateViewLayout(chatView, chatLayoutParams)
-                        }
-                        return true
-                    }
-
-                    MotionEvent.ACTION_UP -> {
-                        isDraggingMove = false
-                        return true
-                    }
-                }
-                return false
-            }
-        })
 
         messagesScroll = ScrollView(this).apply {
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f)
@@ -465,59 +444,54 @@ class OverlayService : Service() {
         }
         messagesScroll.addView(messagesContainer)
 
-
-
-        // Create top resize handle (invisible)
-        topResizeHandle = View(this).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                resizeThresholdPx
-            )
-            setBackgroundColor(Color.TRANSPARENT)
-            setOnTouchListener(createResizeListener(isTop = true))
-        }
-
-        // Create bottom resize handle (visible with nice styling)
-        bottomResizeHandle = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                resizeThresholdPx + 10  // Slightly taller for easier grabbing
-            )
-            setPadding(0, 5, 0, 5)
-            setBackgroundColor(0xFFE0E0E0.toInt())
-
-            // Add visual indicator (three horizontal lines)
-            val indicator = View(this@OverlayService).apply {
-                layoutParams = LinearLayout.LayoutParams(60, 4).apply {
-                    setMargins(0, 2, 0, 2)
-                }
-                background = GradientDrawable().apply {
-                    shape = GradientDrawable.RECTANGLE
-                    cornerRadius = 2f
-                    setColor(0xFF9E9E9E.toInt())
-                }
-            }
-            addView(indicator)
-
-            setOnTouchListener(createResizeListener(isTop = false))
-        }
-
-        chatLayout.addView(topResizeHandle)
         chatLayout.addView(headerLayout)
         chatLayout.addView(messagesScroll)
-        chatLayout.addView(bottomResizeHandle)
 
         @Suppress("DEPRECATION")
         chatLayoutParams = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.MATCH_PARENT, currentChatHeight,
+            MAX_CHAT_WIDTH, maxChatHeight,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY else WindowManager.LayoutParams.TYPE_PHONE,
-            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
             PixelFormat.TRANSLUCENT
         )
-        chatLayoutParams!!.gravity = Gravity.BOTTOM
+        // // Overlay window size
+        // chatLayoutParams!!.gravity = Gravity.BOTTOM
+        // chatLayoutParams!!.y = 0
+
+        //Full screen window
+        chatLayoutParams!!.gravity = Gravity.TOP
         chatLayoutParams!!.y = 100
+
+        chatLayout.setOnTouchListener(object : View.OnTouchListener {
+            private var lastX = 0
+            private var lastY = 0
+            private var touchedX = 0f
+            private var touchedY = 0f
+            private var isDragging = false
+            override fun onTouch(v: View?, event: MotionEvent): Boolean {
+                when (event.action) {
+                    MotionEvent.ACTION_DOWN -> {
+                        lastX = chatLayoutParams!!.x
+                        lastY = chatLayoutParams!!.y
+                        touchedX = event.rawX
+                        touchedY = event.rawY
+                        isDragging = false
+                        return true
+                    }
+                    MotionEvent.ACTION_MOVE -> {
+                        val deltaX = event.rawX - touchedX
+                        val deltaY = event.rawY - touchedY
+                        if (kotlin.math.abs(deltaX) > 10 || kotlin.math.abs(deltaY) > 10) isDragging = true
+                        chatLayoutParams!!.x = lastX + deltaX.toInt()
+                        chatLayoutParams!!.y = lastY + deltaY.toInt()
+                        windowManager.updateViewLayout(chatView, chatLayoutParams)
+                        return true
+                    }
+                }
+                return false
+            }
+        })
+
         chatView = chatLayout
         windowManager.addView(chatView, chatLayoutParams)
         isChatVisible = true
@@ -542,34 +516,31 @@ class OverlayService : Service() {
         if (isMinimized) {
             // Hide content, show only header
             messagesScroll.visibility = View.GONE
-            if (::topResizeHandle.isInitialized) {
-                topResizeHandle.visibility = View.GONE
-            }
-            if (::bottomResizeHandle.isInitialized) {
-                bottomResizeHandle.visibility = View.GONE
-            }
+            interveneButton.visibility = View.VISIBLE
             chatLayoutParams!!.height = MIN_CHAT_HEIGHT
+            chatLayoutParams!!.width = MIN_CHAT_WIDTH
+            titleView.text = "작동중"
+            val displayMetrics = DisplayMetrics()
+            @Suppress("DEPRECATION")
+            windowManager.defaultDisplay.getMetrics(displayMetrics)
+            chatLayoutParams!!.gravity = Gravity.TOP
+            chatLayoutParams!!.y = (displayMetrics.heightPixels * 0.4).toInt()
         } else {
             // Restore full view
             messagesScroll.visibility = View.VISIBLE
-            if (::topResizeHandle.isInitialized) {
-                topResizeHandle.visibility = View.VISIBLE
-            }
-            if (::bottomResizeHandle.isInitialized) {
-                bottomResizeHandle.visibility = View.VISIBLE
-            }
-            chatLayoutParams!!.height = currentChatHeight
+            interveneButton.visibility = View.GONE
+            chatLayoutParams!!.height = maxChatHeight
+            chatLayoutParams!!.width = MAX_CHAT_WIDTH
+            titleView.text = "AI 도우미"
+            // Full screen window
+            chatLayoutParams!!.gravity = Gravity.TOP
+            chatLayoutParams!!.y = 100
+            // Overlay window version:
+            // chatLayoutParams!!.gravity = Gravity.BOTTOM
+            // chatLayoutParams!!.y = 0
         }
 
         windowManager.updateViewLayout(chatView, chatLayoutParams)
-
-        // Update minimize button icon
-        if (::minimizeButton.isInitialized) {
-            minimizeButton.setImageResource(
-                if (isMinimized) android.R.drawable.ic_menu_more  // Expand icon
-                else android.R.drawable.ic_menu_upload           // Minimize icon
-            )
-        }
     }
 
     private fun repeatLastMessage() {
@@ -584,72 +555,29 @@ class OverlayService : Service() {
         Log.i(TAG, "Repeated assistant message: $message")
     }
 
-    private fun createResizeListener(isTop: Boolean): View.OnTouchListener {
-        return object : View.OnTouchListener {
-            override fun onTouch(v: View?, event: MotionEvent): Boolean {
-                if (chatLayoutParams == null || isMinimized) return false
-
-                when (event.action) {
-                    MotionEvent.ACTION_DOWN -> {
-                        dragStartHeight = chatLayoutParams!!.height
-                        headerTouchedY = event.rawY
-                        isDraggingResize = true
-                        return true
-                    }
-
-                    MotionEvent.ACTION_MOVE -> {
-                        if (!isDraggingResize) return true
-
-                        val deltaY = event.rawY - headerTouchedY
-
-                        val newHeight = if (isTop) {
-                            // Top edge: dragging up decreases height, dragging down increases height
-                            (dragStartHeight - deltaY.toInt()).coerceIn(MIN_CHAT_HEIGHT, MAX_CHAT_HEIGHT)
-                        } else {
-                            // Bottom edge: dragging down increases height, dragging up decreases height
-                            (dragStartHeight + deltaY.toInt()).coerceIn(MIN_CHAT_HEIGHT, MAX_CHAT_HEIGHT)
-                        }
-
-                        chatLayoutParams!!.height = newHeight
-                        currentChatHeight = newHeight
-                        windowManager.updateViewLayout(chatView, chatLayoutParams)
-                        return true
-                    }
-
-                    MotionEvent.ACTION_UP -> {
-                        isDraggingResize = false
-                        return true
-                    }
-                }
-                return false
-            }
-        }
-    }
-
     private val activeDotAnimators = mutableListOf<ValueAnimator>()
 
     private fun clearMessage() {
         activeDotAnimators.forEach { it.cancel() }
         activeDotAnimators.clear()
-        currentMessageView?.let { messagesContainer.removeView(it); currentMessageView = null }
+        clearAgentMessage()
+        clearUserStatusMessage()
     }
 
-    private fun showUserMessage(message: String) {
-        clearMessage()
-        val row = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER
+    private fun clearAgentMessage() {
+        for (view in agentResponseViewList) {
+            messagesContainer.removeView(view)
         }
-        val text = TextView(this).apply {
-            text = message; textSize = 34f; setTextColor(Color.WHITE)
-            background = GradientDrawable().apply { shape = GradientDrawable.RECTANGLE; cornerRadius = 35f; setColor(0xFF42A5F5.toInt()) }
-            setPadding(40, 35, 40, 35)
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(0, 0, 20, 0) }
+        agentResponseViewList.clear()
+    }
+
+    private fun clearUserStatusMessage() {
+        activeDotAnimators.forEach { it.cancel() }
+        activeDotAnimators.clear()
+        for (view in userStatusViewList) {
+            messagesContainer.removeView(view)
         }
-        val icon = createIcon(android.R.drawable.ic_menu_myplaces)
-        row.addView(text)
-        row.addView(icon)
-        messagesContainer.addView(row)
-        currentMessageView = row
+        userStatusViewList.clear()
     }
 
     private fun showAssistantResponse(message: String) {
@@ -680,7 +608,7 @@ class OverlayService : Service() {
         row.addView(icon)
         row.addView(text)
         messagesContainer.addView(row)
-        currentMessageView = row
+        agentResponseViewList.add(row)
         clovaTTS(message)
     }
 
@@ -718,7 +646,7 @@ class OverlayService : Service() {
     }
 
     private fun showLoadingBubbles() {
-        clearMessage()
+        clearUserStatusMessage()
         val bubble = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
             background = GradientDrawable().apply { shape = GradientDrawable.RECTANGLE; cornerRadius = 50f; setColor(0xFFE3F2FD.toInt()) }
@@ -731,7 +659,7 @@ class OverlayService : Service() {
         bubble.addView(label)
         bubble.addView(createAnimatedDots(0xFF42A5F5.toInt()))
         messagesContainer.addView(bubble)
-        currentMessageView = bubble
+        userStatusViewList.add(bubble)
     }
 
     private fun createCircularDots(color: Int): FrameLayout {
@@ -773,7 +701,7 @@ class OverlayService : Service() {
     }
 
     private fun showThinkingBubbles() {
-        clearMessage()
+        clearUserStatusMessage()
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER
         }
@@ -796,17 +724,14 @@ class OverlayService : Service() {
         row.addView(icon)
         row.addView(bubble)
         messagesContainer.addView(row)
-        currentMessageView = row
+        userStatusViewList.add(row)
     }
-
-
 
     // ==================== AUDIO LOGIC (ALWAYS-ON RECORDING & CLOVA) ====================
 
-    /**
-     * Calculates the RMS (Root Mean Square) amplitude of PCM 16-bit audio samples.
-     * Used for Voice Activity Detection to determine if the user is speaking.
-     */
+    
+    // Calculate the RMS (Root Mean Square) amplitude of PCM 16-bit audio samples.
+     
     private fun calculateRMS(audioBytes: ByteArray, bytesRead: Int): Double {
         var sum = 0.0
         val samples = bytesRead / 2  // 16-bit = 2 bytes per sample
@@ -819,13 +744,7 @@ class OverlayService : Service() {
         return if (samples > 0) kotlin.math.sqrt(sum / samples) else 0.0
     }
 
-    /**
-     * Starts continuous microphone recording with Voice Activity Detection (VAD).
-     * Instead of fixed chunks, detects when the user starts/stops speaking:
-     * - Speech detected → shows "..." on mobile, sends speaking_started to wizard
-     * - Silence after speech → sends audio to STT, shows result, sends speaking_stopped
-     * This provides Siri-like behavior with no information loss.
-     */
+   
     private fun startContinuousListening() {
         if (isContinuousListening) {
             Log.w(TAG, "Continuous listening already active")
@@ -863,22 +782,15 @@ class OverlayService : Service() {
                     val rms = calculateRMS(tempBuf, read)
                     val hasSpeech = rms > VAD_SPEECH_THRESHOLD
 
-                    // During TTS playback: if user speaks, interrupt TTS; otherwise skip
+                    
                     if (isTTSPlaying) {
-                        if (hasSpeech) {
-                            // User is interrupting TTS — stop audio and proceed to speech handling
-                            Log.i(TAG, "VAD: User interrupted TTS")
-                            mainHandler.post { stopCurrentAudio() }
-                            // Fall through to normal speech handling below
-                        } else {
-                            if (isSpeaking) {
-                                // TTS started while user was speaking — end speech state
-                                onSpeechEnd(speechBuffer.toByteArray(), speechStartTime)
-                                speechBuffer = ByteArrayOutputStream()
-                                isSpeaking = false
-                            }
-                            continue
+                        if (isSpeaking) {
+                            // TTS started while user was speaking — end speech state
+                            onSpeechEnd(speechBuffer.toByteArray(), speechStartTime)
+                            speechBuffer = ByteArrayOutputStream()
+                            isSpeaking = false
                         }
+                        continue
                     }
 
                     if (hasSpeech) {
@@ -900,23 +812,19 @@ class OverlayService : Service() {
                             Log.i(TAG, "VAD: Auto-splitting at 60s")
                             val audioBytes = speechBuffer.toByteArray()
                             val utteranceStart = speechStartTime
-                            // Process current chunk silently (no speaking_stopped)
                             onSpeechAutoSplit(audioBytes, utteranceStart)
-                            // Reset buffer but keep speaking state
+
                             speechBuffer = ByteArrayOutputStream()
                             speechStartTime = now
                         }
 
                     } else if (isSpeaking) {
-                        // Still accumulate during short pauses (captures natural speech gaps)
                         speechBuffer.write(tempBuf, 0, read)
 
-                        // Check if silence has lasted long enough to end utterance
                         if (now - lastSpeechTime >= VAD_SILENCE_DURATION_MS) {
                             val speechDuration = now - speechStartTime
 
                             if (speechDuration >= VAD_MIN_SPEECH_MS) {
-                                // Valid utterance — process it
                                 val audioBytes = speechBuffer.toByteArray()
                                 val utteranceStart = speechStartTime
                                 onSpeechEnd(audioBytes, utteranceStart)
@@ -938,10 +846,10 @@ class OverlayService : Service() {
         }.start()
     }
 
-    /**
-     * Called when VAD detects the user started speaking.
-     * Shows "..." indicator on mobile and notifies wizard console.
-     */
+
+    //  Called when VAD detects the user started speaking.
+    //  Shows "..." indicator on mobile and notifies wizard console.
+
     private fun onSpeechStart() {
         Log.i(TAG, "VAD: Speech started")
 
@@ -949,7 +857,10 @@ class OverlayService : Service() {
         mainHandler.post {
             if (::messagesContainer.isInitialized) {
                 messagesContainer.removeAllViews()
-                currentMessageView = null
+                agentResponseViewList.clear()
+                userStatusViewList.clear()
+                activeDotAnimators.forEach { it.cancel() }
+                activeDotAnimators.clear()
                 showLoadingBubbles()
             }
         }
@@ -958,11 +869,7 @@ class OverlayService : Service() {
         wizardClient?.sendEvent("speaking_started")
     }
 
-    /**
-     * Called when speech exceeds VAD_MAX_UTTERANCE_MS (auto-split).
-     * Sends the current chunk to STT without ending the speaking state.
-     * The "듣고 있어요" indicator stays visible and no speaking_stopped is sent.
-     */
+
     private fun onSpeechAutoSplit(audioBytes: ByteArray, utteranceStartTime: Long) {
         val durationMs = System.currentTimeMillis() - utteranceStartTime
         Log.i(TAG, "VAD: Auto-split chunk (duration: ${durationMs}ms, audio: ${audioBytes.size} bytes)")
@@ -978,8 +885,7 @@ class OverlayService : Service() {
                     "chunk_timestamp" to isoTimestamp,
                     "auto_split" to true
                 ))
-                // Don't update mobile UI — keep "듣고 있어요" visible
-                // Send to wizard as partial transcript
+
                 wizardClient?.sendMessage(text)
                 Log.i(TAG, "Auto-split transcript: \"$text\" at $isoTimestamp")
             } else {
@@ -988,17 +894,11 @@ class OverlayService : Service() {
         }
     }
 
-    /**
-     * Called when VAD detects the user stopped speaking.
-     * Processes audio through STT and sends results to wizard.
-     * @param audioBytes The accumulated speech audio, or null if discarded
-     * @param utteranceStartTime When the speech utterance began
-     */
+
     private fun onSpeechEnd(audioBytes: ByteArray?, utteranceStartTime: Long) {
         val durationMs = System.currentTimeMillis() - utteranceStartTime
         Log.i(TAG, "VAD: Speech ended (duration: ${durationMs}ms, audio: ${audioBytes?.size ?: 0} bytes)")
 
-        // Notify wizard immediately so the speaking indicator stops right away
         wizardClient?.sendEvent("speaking_stopped", mapOf(
             "duration_ms" to durationMs
         ))
@@ -1007,7 +907,7 @@ class OverlayService : Service() {
             // No valid audio — just hide indicator
             mainHandler.post {
                 if (::messagesContainer.isInitialized) {
-                    clearMessage()  // Remove "..." bubbles
+                    clearUserStatusMessage()  // Remove listening bubbles
                 }
             }
             return
@@ -1026,7 +926,6 @@ class OverlayService : Service() {
                     "chunk_timestamp" to isoTimestamp
                 ))
 
-                // Show "thinking" indicator and send transcript to wizard (don't show user's text)
                 mainHandler.post {
                     if (::messagesContainer.isInitialized) {
                         showThinkingBubbles()
@@ -1039,7 +938,7 @@ class OverlayService : Service() {
                 // STT returned empty — remove loading bubbles
                 mainHandler.post {
                     if (::messagesContainer.isInitialized) {
-                        clearMessage()
+                        clearUserStatusMessage()
                     }
                 }
                 Log.d(TAG, "STT returned empty for utterance at $isoTimestamp")
@@ -1047,9 +946,7 @@ class OverlayService : Service() {
         }
     }
 
-    /**
-     * Stops the continuous listening loop and releases the audio recorder.
-     */
+
     private fun stopContinuousListening() {
         isContinuousListening = false
         isSpeaking = false
@@ -1161,11 +1058,11 @@ class OverlayService : Service() {
                 if (currentMediaPlayer == it) currentMediaPlayer = null
                 isTTSPlaying = false  // TTS finished, resume transcript processing
             }
-            mp.setOnErrorListener { mp, what, extra ->
+            mp.setOnErrorListener { player, what, extra ->
                 Log.e(TAG, "MediaPlayer error: what=$what, extra=$extra")
-                mp.release()
+                player.release()
                 tempFile.delete()
-                if (currentMediaPlayer == mp) currentMediaPlayer = null
+                if (currentMediaPlayer == player) currentMediaPlayer = null
                 isTTSPlaying = false  // Error occurred, resume transcript processing
                 true
             }
@@ -1289,15 +1186,6 @@ class OverlayService : Service() {
             }
         }
 
-        // Step indicator (e.g., "1/5")
-        val stepIndicator = TextView(this).apply {
-            text = "$step/$total"
-            textSize = 24f
-            setTextColor(0xFF6D4C41.toInt()) // Brown
-            setTypeface(null, android.graphics.Typeface.BOLD)
-            gravity = Gravity.END
-        }
-
         // Title
         val titleView = TextView(this).apply {
             text = titleKo
@@ -1315,7 +1203,6 @@ class OverlayService : Service() {
             lineHeight = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 38f, resources.displayMetrics).toInt()
         }
 
-        cardLayout.addView(stepIndicator)
         cardLayout.addView(titleView)
         cardLayout.addView(bodyView)
 
