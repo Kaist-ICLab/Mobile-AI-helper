@@ -380,15 +380,14 @@ class OverlayService : Service() {
             setPadding(20, 0, 20, 0)
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
-        interveneButton = Button(this).apply {
-            text = "일시 중지"
-            textSize = 20f
-            setPadding(16, 12, 16, 12)
-            setTextColor(0xFFFFFFFF.toInt())
-            setBackgroundColor(0xFFD32F2F.toInt())
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                setMargins(10, 0, 10, 0)
-            }
+        interveneButton = ImageButton(this).apply {
+            setImageResource(android.R.drawable.ic_media_pause)
+            setBackgroundColor(Color.TRANSPARENT)
+            setColorFilter(0xFFFFFFFF.toInt(), android.graphics.PorterDuff.Mode.SRC_IN)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {}
             setOnClickListener {
                 performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                 if (isMinimized) {
@@ -416,20 +415,10 @@ class OverlayService : Service() {
             isEnabled = false
             alpha = 1f
         }
-        val closeButton = ImageButton(this).apply {
-            setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
-            setBackgroundColor(Color.TRANSPARENT)
-            setColorFilter(Color.WHITE)
-            setOnClickListener {
-                performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                hideChatWindow()
-            }
-        }
         topRow.addView(minimizeButton)
         topRow.addView(titleView)
         topRow.addView(interveneButton)
         topRow.addView(repeatButton)
-        topRow.addView(closeButton)
 
         headerLayout.addView(topRow)
 
@@ -793,7 +782,6 @@ class OverlayService : Service() {
                             // TTS started while user was speaking — end speech state
                             onSpeechEnd(speechBuffer.toByteArray(), speechStartTime)
                             speechBuffer = ByteArrayOutputStream()
-                            isSpeaking = false
                         }
 
                         preSpeechRing.clear()
@@ -806,7 +794,6 @@ class OverlayService : Service() {
 
                         if (!isSpeaking) {
                             // Speech just started
-                            isSpeaking = true
                             speechStartTime = now
                             speechBuffer = ByteArrayOutputStream()
 
@@ -850,7 +837,6 @@ class OverlayService : Service() {
                             }
 
                             speechBuffer = ByteArrayOutputStream()
-                            isSpeaking = false
                         }
                     }
 
@@ -891,6 +877,7 @@ class OverlayService : Service() {
 
         // Notify wizard console
         wizardClient?.sendEvent("speaking_started")
+        isSpeaking = true
     }
 
 
@@ -968,6 +955,7 @@ class OverlayService : Service() {
                 Log.d(TAG, "STT returned empty for utterance at $isoTimestamp")
             }
         }
+        isSpeaking = false
     }
 
 
