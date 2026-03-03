@@ -29,7 +29,6 @@
         android:text="AI 도우미 키기"
         android:backgroundTint="#2196F3"
         android:padding="16dp"
-        android:text="ai 도우미 키기"
         android:textColor="#FFFFFF"
         android:textSize="18sp" />
 
@@ -41,8 +40,6 @@
         android:padding="16dp" 
         android:text="AI 도우미 끄기"
         android:backgroundTint="#F44336"
-        android:padding="16dp"
-        android:text="AI 도우미 끄기"
         android:textColor="#FFFFFF"
         android:textSize="18sp"/>
 
