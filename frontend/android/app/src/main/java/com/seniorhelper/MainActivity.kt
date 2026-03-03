@@ -17,9 +17,7 @@ import androidx.core.content.ContextCompat
 import kotlin.random.Random
 
 class MainActivity : AppCompatActivity() {
-
-    private lateinit var sessionTextView: TextView
-
+    private lateinit var sessionTextView : TextView
     companion object {
         private const val MICROPHONE_REQ_CODE = 1002
     }
@@ -65,7 +63,7 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun startOverlayService() {
-       fun generateSessionId(): String {
+        fun generateSessionId(): String {
             return Random.nextInt(1000, 9999).toString()
         }
         val generatedSessionNumber : String = generateSessionId()

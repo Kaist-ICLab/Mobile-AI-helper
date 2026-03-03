@@ -20,7 +20,7 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="32dp"
         android:text="Control Panel"
-        android:textSize="16sp"/>
+        android:textSize="16sp" />
 
     <Button
         android:id="@+id/startButton"
@@ -28,10 +28,10 @@
         android:layout_height="wrap_content"
         android:text="AI 도우미 키기"
         android:backgroundTint="#2196F3"
-        android:textColor="#FFFFFF"
-        android:textSize="18sp"
         android:padding="16dp"
-        android:layout_marginBottom="16dp" />
+        android:text="ai 도우미 키기"
+        android:textColor="#FFFFFF"
+        android:textSize="18sp" />
 
 
     <Button
@@ -41,6 +41,8 @@
         android:padding="16dp" 
         android:text="AI 도우미 끄기"
         android:backgroundTint="#F44336"
+        android:padding="16dp"
+        android:text="AI 도우미 끄기"
         android:textColor="#FFFFFF"
         android:textSize="18sp"/>
 
