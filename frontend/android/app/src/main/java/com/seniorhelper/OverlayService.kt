@@ -15,6 +15,7 @@ import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaPlayer
 import android.media.MediaRecorder
+import android.opengl.Visibility
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
@@ -65,6 +66,7 @@ class OverlayService : Service() {
     private lateinit var messagesContainer: LinearLayout
     private lateinit var messagesScroll: ScrollView
     private lateinit var titleView: TextView
+    private lateinit var minimizedMessageContainer : LinearLayout
 
     // Chat list state
     private var agentResponseViewList = mutableListOf<View>()
@@ -419,8 +421,14 @@ class OverlayService : Service() {
         topRow.addView(titleView)
         topRow.addView(interveneButton)
         topRow.addView(repeatButton)
-
+        minimizedMessageContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(20, 30, 20, 30)
+            gravity = Gravity.CENTER
+            visibility = View.GONE
+        }
         headerLayout.addView(topRow)
+        headerLayout.addView(minimizedMessageContainer)
 
         messagesScroll = ScrollView(this).apply {
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f)
@@ -432,6 +440,8 @@ class OverlayService : Service() {
             gravity = Gravity.CENTER
         }
         messagesScroll.addView(messagesContainer)
+
+
 
         chatLayout.addView(headerLayout)
         chatLayout.addView(messagesScroll)
@@ -506,8 +516,9 @@ class OverlayService : Service() {
             // Hide content, show only header
             messagesScroll.visibility = View.GONE
             interveneButton.visibility = View.VISIBLE
+            minimizedMessageContainer.visibility = View.VISIBLE
             chatLayoutParams!!.height = MIN_CHAT_HEIGHT
-            chatLayoutParams!!.width = MIN_CHAT_WIDTH
+            chatLayoutParams!!.width = MAX_CHAT_WIDTH
             titleView.text = "작동중"
             val displayMetrics = DisplayMetrics()
             @Suppress("DEPRECATION")
@@ -518,6 +529,7 @@ class OverlayService : Service() {
             // Restore full view
             messagesScroll.visibility = View.VISIBLE
             interveneButton.visibility = View.GONE
+            minimizedMessageContainer.visibility = View.GONE
             chatLayoutParams!!.height = maxChatHeight
             chatLayoutParams!!.width = MAX_CHAT_WIDTH
             titleView.text = "AI 도우미"
@@ -563,8 +575,10 @@ class OverlayService : Service() {
     private fun clearUserStatusMessage() {
         activeDotAnimators.forEach { it.cancel() }
         activeDotAnimators.clear()
+        Log.i("userStatusViewList", userStatusViewList.size.toString())
         for (view in userStatusViewList) {
             messagesContainer.removeView(view)
+            minimizedMessageContainer.removeView(view)
         }
         userStatusViewList.clear()
     }
@@ -647,8 +661,16 @@ class OverlayService : Service() {
         }
         bubble.addView(label)
         bubble.addView(createAnimatedDots(0xFF42A5F5.toInt()))
-        messagesContainer.addView(bubble)
-        userStatusViewList.add(bubble)
+
+        if (isMinimized)
+        {
+            minimizedMessageContainer.addView(bubble)
+            userStatusViewList.add(bubble)
+        }
+        else {
+            messagesContainer.addView(bubble)
+            userStatusViewList.add(bubble)
+        }
     }
 
     private fun createCircularDots(color: Int): FrameLayout {
