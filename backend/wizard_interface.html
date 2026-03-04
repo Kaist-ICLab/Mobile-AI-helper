@@ -780,13 +780,19 @@
           <h4>🎭 Overlay Text Control</h4>
 
           <label>Thinking Text (생각 중):</label>
-          <input type="text" id="overlayThinkingText" value="생각 중" placeholder="생각 중" />
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="overlayThinkingText" value="생각 중" placeholder="생각 중" style="flex:1;" />
+            <button onclick="sendOverlayThinkingText()" class="send-btn" style="flex:none; padding:8px 14px;">Send</button>
+          </div>
 
           <label>Listening Text (듣고 있어요):</label>
-          <input type="text" id="overlayListeningText" value="듣고 있어요" placeholder="듣고 있어요" />
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="overlayListeningText" value="듣고 있어요" placeholder="듣고 있어요" style="flex:1;" />
+            <button onclick="sendOverlayListeningText()" class="send-btn" style="flex:none; padding:8px 14px;">Send</button>
+          </div>
 
-          <div class="overlay-text-buttons">
-            <button onclick="sendOverlayText()" class="send-btn">Send to Phone</button>
+          <div class="overlay-text-buttons" style="margin-top:10px;">
+            <button onclick="sendOverlayText()" class="send-btn">Send Both</button>
             <button onclick="resetOverlayText()" class="reset-btn">Reset Defaults</button>
           </div>
           <div class="overlay-text-status" id="overlayTextStatus"></div>

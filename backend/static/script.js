@@ -425,10 +425,74 @@ async function sendOverlayText() {
         body: JSON.stringify({ session_id: currentSessionId, role: 'wizard', text: JSON.stringify(payload) })
     });
     console.log('Overlay text command sent:', payload);
-    setOverlayTextStatus('Sent ✅');
+    setOverlayTextStatus('Both sent ✅');
     loadMessages();
     } catch (e) {
     alert('Error sending overlay text command: ' + e);
+    setOverlayTextStatus('Send failed');
+    }
+}
+
+async function sendOverlayThinkingText() {
+    if (!currentSessionId) {
+    alert('Connect to a session first!');
+    return;
+    }
+
+    const thinkingText = (document.getElementById('overlayThinkingText').value || '').trim();
+    if (!thinkingText) {
+    alert('Please enter a thinking text value');
+    return;
+    }
+
+    const payload = {
+    type: 'overlay_text',
+    thinking_text: thinkingText
+    };
+
+    try {
+    await fetch(`${API_URL}/message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: currentSessionId, role: 'wizard', text: JSON.stringify(payload) })
+    });
+    console.log('Overlay thinking text sent:', payload);
+    setOverlayTextStatus('Thinking text sent ✅');
+    loadMessages();
+    } catch (e) {
+    alert('Error sending thinking text: ' + e);
+    setOverlayTextStatus('Send failed');
+    }
+}
+
+async function sendOverlayListeningText() {
+    if (!currentSessionId) {
+    alert('Connect to a session first!');
+    return;
+    }
+
+    const listeningText = (document.getElementById('overlayListeningText').value || '').trim();
+    if (!listeningText) {
+    alert('Please enter a listening text value');
+    return;
+    }
+
+    const payload = {
+    type: 'overlay_text',
+    listening_text: listeningText
+    };
+
+    try {
+    await fetch(`${API_URL}/message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: currentSessionId, role: 'wizard', text: JSON.stringify(payload) })
+    });
+    console.log('Overlay listening text sent:', payload);
+    setOverlayTextStatus('Listening text sent ✅');
+    loadMessages();
+    } catch (e) {
+    alert('Error sending listening text: ' + e);
     setOverlayTextStatus('Send failed');
     }
 }
