@@ -574,8 +574,6 @@ class OverlayService : Service() {
     }
 
     private fun clearUserStatusMessage() {
-        activeDotAnimators.forEach { it.cancel() }
-        activeDotAnimators.clear()
         Log.i("userStatusViewList", userStatusViewList.size.toString())
         for (view in userStatusViewList) {
             messagesContainer.removeView(view)
@@ -896,7 +894,7 @@ class OverlayService : Service() {
                 activeDotAnimators.clear()
                 showLoadingBubbles()
             }
-            if (::minimizedMessageContainer.isInitialized){
+            else if (::minimizedMessageContainer.isInitialized){
                 minimizedMessageContainer.removeAllViews()
                 userStatusViewList.clear()
                 activeDotAnimators.forEach { it.cancel() }
