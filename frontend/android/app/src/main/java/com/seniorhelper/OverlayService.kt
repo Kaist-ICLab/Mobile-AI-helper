@@ -37,6 +37,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.core.view.setMargins
+import androidx.lifecycle.ViewModel
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -889,6 +890,7 @@ class OverlayService : Service() {
         mainHandler.post {
             if (::messagesContainer.isInitialized) {
                 messagesContainer.removeAllViews()
+                minimizedMessageContainer.removeAllViews()
                 agentResponseViewList.clear()
                 userStatusViewList.clear()
                 activeDotAnimators.forEach { it.cancel() }
