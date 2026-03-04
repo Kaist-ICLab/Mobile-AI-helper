@@ -91,6 +91,7 @@ class OverlayService : Service() {
     private lateinit var minimizeButton: View
     private lateinit var interveneButton: View
     private lateinit var repeatButton: ImageButton
+    private lateinit var workingAnimator : View
 
     // Last assistant message for repeat functionality
     private var lastAssistantMessage: String? = null
@@ -383,6 +384,9 @@ class OverlayService : Service() {
             setPadding(20, 0, 20, 0)
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
+
+        workingAnimator = createAnimatedDots(0xFF42A5F5.toInt())
+        workingAnimator.visibility = View.GONE;
         interveneButton = ImageButton(this).apply {
             setImageResource(android.R.drawable.ic_media_pause)
             setBackgroundColor(Color.TRANSPARENT)
@@ -420,6 +424,7 @@ class OverlayService : Service() {
         }
         topRow.addView(minimizeButton)
         topRow.addView(titleView)
+        topRow.addView(workingAnimator)
         topRow.addView(interveneButton)
         topRow.addView(repeatButton)
         minimizedMessageContainer = LinearLayout(this).apply {
@@ -513,6 +518,9 @@ class OverlayService : Service() {
 
         isMinimized = !isMinimized
 
+        if(!isSpeaking&& isMinimized){
+            workingAnimator.visibility = View.VISIBLE;
+        }
         if (isMinimized) {
             // Hide content, show only header
             messagesScroll.visibility = View.GONE
@@ -906,6 +914,10 @@ class OverlayService : Service() {
         // Notify wizard console
         wizardClient?.sendEvent("speaking_started")
         isSpeaking = true
+
+        if(!isSpeaking&& isMinimized){
+            workingAnimator.visibility = View.VISIBLE;
+        }
     }
 
 
@@ -984,6 +996,10 @@ class OverlayService : Service() {
             }
         }
         isSpeaking = false
+
+        if(!isSpeaking&& isMinimized){
+            workingAnimator.visibility = View.VISIBLE;
+        }
     }
 
 
