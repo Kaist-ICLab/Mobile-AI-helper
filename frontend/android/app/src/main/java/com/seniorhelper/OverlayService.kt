@@ -15,6 +15,7 @@ import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaPlayer
 import android.media.MediaRecorder
+import android.opengl.Visibility
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
@@ -36,6 +37,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.core.view.setMargins
+import androidx.lifecycle.ViewModel
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -65,6 +67,7 @@ class OverlayService : Service() {
     private lateinit var messagesContainer: LinearLayout
     private lateinit var messagesScroll: ScrollView
     private lateinit var titleView: TextView
+    private lateinit var minimizedMessageContainer : LinearLayout
 
     // Chat list state
     private var agentResponseViewList = mutableListOf<View>()
@@ -88,6 +91,7 @@ class OverlayService : Service() {
     private lateinit var minimizeButton: View
     private lateinit var interveneButton: View
     private lateinit var repeatButton: ImageButton
+    private lateinit var workingAnimator : View
 
     // Last assistant message for repeat functionality
     private var lastAssistantMessage: String? = null
@@ -380,15 +384,17 @@ class OverlayService : Service() {
             setPadding(20, 0, 20, 0)
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
-        interveneButton = Button(this).apply {
-            text = "일시 중지"
-            textSize = 20f
-            setPadding(16, 12, 16, 12)
-            setTextColor(0xFFFFFFFF.toInt())
-            setBackgroundColor(0xFFD32F2F.toInt())
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                setMargins(10, 0, 10, 0)
-            }
+
+        workingAnimator = createAnimatedDots(0xFF42A5F5.toInt())
+        workingAnimator.visibility = View.GONE;
+        interveneButton = ImageButton(this).apply {
+            setImageResource(android.R.drawable.ic_media_pause)
+            setBackgroundColor(Color.TRANSPARENT)
+            setColorFilter(0xFFFFFFFF.toInt(), android.graphics.PorterDuff.Mode.SRC_IN)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {}
             setOnClickListener {
                 performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                 if (isMinimized) {
@@ -416,22 +422,19 @@ class OverlayService : Service() {
             isEnabled = false
             alpha = 1f
         }
-        val closeButton = ImageButton(this).apply {
-            setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
-            setBackgroundColor(Color.TRANSPARENT)
-            setColorFilter(Color.WHITE)
-            setOnClickListener {
-                performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                hideChatWindow()
-            }
-        }
         topRow.addView(minimizeButton)
         topRow.addView(titleView)
+        topRow.addView(workingAnimator)
         topRow.addView(interveneButton)
         topRow.addView(repeatButton)
-        topRow.addView(closeButton)
-
+        minimizedMessageContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(20, 30, 20, 30)
+            gravity = Gravity.CENTER
+            visibility = View.GONE
+        }
         headerLayout.addView(topRow)
+        headerLayout.addView(minimizedMessageContainer)
 
         messagesScroll = ScrollView(this).apply {
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f)
@@ -443,6 +446,8 @@ class OverlayService : Service() {
             gravity = Gravity.CENTER
         }
         messagesScroll.addView(messagesContainer)
+
+
 
         chatLayout.addView(headerLayout)
         chatLayout.addView(messagesScroll)
@@ -513,12 +518,16 @@ class OverlayService : Service() {
 
         isMinimized = !isMinimized
 
+        if(!isSpeaking&& isMinimized){
+            workingAnimator.visibility = View.VISIBLE;
+        }
         if (isMinimized) {
             // Hide content, show only header
             messagesScroll.visibility = View.GONE
             interveneButton.visibility = View.VISIBLE
+            minimizedMessageContainer.visibility = View.VISIBLE
             chatLayoutParams!!.height = MIN_CHAT_HEIGHT
-            chatLayoutParams!!.width = MIN_CHAT_WIDTH
+            chatLayoutParams!!.width = MAX_CHAT_WIDTH
             titleView.text = "작동중"
             val displayMetrics = DisplayMetrics()
             @Suppress("DEPRECATION")
@@ -529,6 +538,7 @@ class OverlayService : Service() {
             // Restore full view
             messagesScroll.visibility = View.VISIBLE
             interveneButton.visibility = View.GONE
+            minimizedMessageContainer.visibility = View.GONE
             chatLayoutParams!!.height = maxChatHeight
             chatLayoutParams!!.width = MAX_CHAT_WIDTH
             titleView.text = "AI 도우미"
@@ -572,10 +582,10 @@ class OverlayService : Service() {
     }
 
     private fun clearUserStatusMessage() {
-        activeDotAnimators.forEach { it.cancel() }
-        activeDotAnimators.clear()
+        Log.i("userStatusViewList", userStatusViewList.size.toString())
         for (view in userStatusViewList) {
             messagesContainer.removeView(view)
+            minimizedMessageContainer.removeView(view)
         }
         userStatusViewList.clear()
     }
@@ -658,8 +668,16 @@ class OverlayService : Service() {
         }
         bubble.addView(label)
         bubble.addView(createAnimatedDots(0xFF42A5F5.toInt()))
-        messagesContainer.addView(bubble)
-        userStatusViewList.add(bubble)
+
+        if (isMinimized)
+        {
+            minimizedMessageContainer.addView(bubble)
+            userStatusViewList.add(bubble)
+        }
+        else {
+            messagesContainer.addView(bubble)
+            userStatusViewList.add(bubble)
+        }
     }
 
     private fun createCircularDots(color: Int): FrameLayout {
@@ -793,7 +811,6 @@ class OverlayService : Service() {
                             // TTS started while user was speaking — end speech state
                             onSpeechEnd(speechBuffer.toByteArray(), speechStartTime)
                             speechBuffer = ByteArrayOutputStream()
-                            isSpeaking = false
                         }
 
                         preSpeechRing.clear()
@@ -806,7 +823,6 @@ class OverlayService : Service() {
 
                         if (!isSpeaking) {
                             // Speech just started
-                            isSpeaking = true
                             speechStartTime = now
                             speechBuffer = ByteArrayOutputStream()
 
@@ -850,7 +866,6 @@ class OverlayService : Service() {
                             }
 
                             speechBuffer = ByteArrayOutputStream()
-                            isSpeaking = false
                         }
                     }
 
@@ -887,10 +902,22 @@ class OverlayService : Service() {
                 activeDotAnimators.clear()
                 showLoadingBubbles()
             }
+            else if (::minimizedMessageContainer.isInitialized){
+                minimizedMessageContainer.removeAllViews()
+                userStatusViewList.clear()
+                activeDotAnimators.forEach { it.cancel() }
+                activeDotAnimators.clear()
+                showLoadingBubbles()
+            }
         }
 
         // Notify wizard console
         wizardClient?.sendEvent("speaking_started")
+        isSpeaking = true
+
+        if(!isSpeaking&& isMinimized){
+            workingAnimator.visibility = View.VISIBLE;
+        }
     }
 
 
@@ -967,6 +994,11 @@ class OverlayService : Service() {
                 }
                 Log.d(TAG, "STT returned empty for utterance at $isoTimestamp")
             }
+        }
+        isSpeaking = false
+
+        if(!isSpeaking&& isMinimized){
+            workingAnimator.visibility = View.VISIBLE;
         }
     }
 
