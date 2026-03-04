@@ -1,6 +1,6 @@
 package com.mobileaihelper
 
-import android.animation.ValueAnimator
+import android.app.Activity
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -8,18 +8,26 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.PixelFormat
 import android.graphics.drawable.GradientDrawable
+import android.hardware.display.DisplayManager
+import android.hardware.display.VirtualDisplay
 import android.media.AudioFormat
 import android.media.AudioRecord
+import android.media.ImageReader
 import android.media.MediaPlayer
 import android.media.MediaRecorder
-import android.opengl.Visibility
+import android.media.MicrophoneInfo
+import android.media.projection.MediaProjection
+import android.media.projection.MediaProjectionManager
+import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.text.InputType
 import android.util.DisplayMetrics
 import android.util.Log
 import android.util.TypedValue
@@ -27,6 +35,7 @@ import android.view.Gravity
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.FrameLayout
@@ -35,17 +44,23 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.cardview.widget.CardView
+import androidx.core.view.marginLeft
+import androidx.core.view.marginRight
 import androidx.core.view.setMargins
-import androidx.lifecycle.ViewModel
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
+import java.util.Base64
 import kotlin.random.Random
+import co.daily.CallClient
+import co.daily.CallClientListener
 import com.mobileaihelper.BuildConfig
+import kotlin.math.log
 
 
 class OverlayService : Service() {
@@ -63,15 +78,10 @@ class OverlayService : Service() {
     private var bubbleView: View? = null
     private var chatView: View? = null
     private var isChatVisible = false
-
+    private lateinit var micButton: ImageButton
     private lateinit var messagesContainer: LinearLayout
     private lateinit var messagesScroll: ScrollView
-    private lateinit var titleView: TextView
-    private lateinit var minimizedMessageContainer : LinearLayout
-
-    // Chat list state
-    private var agentResponseViewList = mutableListOf<View>()
-    private var userStatusViewList = mutableListOf<View>()
+    private lateinit var titleView : TextView
 
     // Tutorial State
     private var isTutorialVisible = false
@@ -85,24 +95,30 @@ class OverlayService : Service() {
     // Chat window state
     private var isMinimized = false
     private var chatLayoutParams: WindowManager.LayoutParams? = null
-    private var maxChatHeight = WindowManager.LayoutParams.MATCH_PARENT
+
+    // Chat list state
+    private var agentResponseViewList = mutableListOf<View>();
+    private var userStatusViewList = mutableListOf<View>();
+
 
     // Store UI references for visibility toggling
+    private lateinit var controlsLayout: LinearLayout
     private lateinit var minimizeButton: View
-    private lateinit var interveneButton: View
+    private lateinit var interveneButton : View
     private lateinit var repeatButton: ImageButton
-    private lateinit var workingAnimator : View
 
     // Last assistant message for repeat functionality
     private var lastAssistantMessage: String? = null
 
-    // Current MediaPlayer for TTS
+    // Current MediaPlayer for TTS (to stop when mic clicked)
     private var currentMediaPlayer: MediaPlayer? = null
+
 
     // Wizard Chat Client
     private var wizardClient: WizardConsoleClient? = null
-    private var sessionId: String = "-1"
+    private var sessionId : String = "-1"
     private val mainHandler = Handler(Looper.getMainLooper())
+
     // Audio Recording
     private var recorder: AudioRecord? = null
     private var isRecording = false
@@ -110,23 +126,12 @@ class OverlayService : Service() {
     private val CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO
     private val AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT
 
-    // Always-on continuous listening with Voice Activity Detection
-    private var isContinuousListening = false
-    @Volatile private var isTTSPlaying = false
-    @Volatile private var isSpeaking = false  // VAD: is user currently speaking?
-    private var speechStartTime = 0L           // When current speech began
-
     companion object {
         private const val TAG = "OverlayService"
         private const val MIN_CHAT_HEIGHT = WindowManager.LayoutParams.WRAP_CONTENT
+        private const val MAX_CHAT_HEIGHT = WindowManager.LayoutParams.MATCH_PARENT
         private const val MIN_CHAT_WIDTH = WindowManager.LayoutParams.WRAP_CONTENT
         private const val MAX_CHAT_WIDTH = WindowManager.LayoutParams.MATCH_PARENT
-
-        // Voice Activity Detection thresholds
-        private const val VAD_SPEECH_THRESHOLD = 800     // RMS amplitude to detect speech
-        private const val VAD_SILENCE_DURATION_MS = 1500L // Silence duration to end utterance
-        private const val VAD_MIN_SPEECH_MS = 300L        // Ignore very short bursts (noise)
-        private const val VAD_MAX_UTTERANCE_MS = 60000L   // Auto-split at 60s (CLOVA CSR limit)
 
     }
 
@@ -137,34 +142,23 @@ class OverlayService : Service() {
     override fun onCreate() {
         super.onCreate()
         try {
+            // 1. Initial Start: Microphone ONLY
             updateForegroundService(enableScreenShare = false)
-
             windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
-
-            // //Overlay window size
-            // val displayMetrics = DisplayMetrics()
-            // @Suppress("DEPRECATION")
-            // windowManager.defaultDisplay.getMetrics(displayMetrics)
-            // // 60% of screen height
-            // maxChatHeight = (displayMetrics.heightPixels * 0.6).toInt()
-            // Full screen window
-            maxChatHeight = WindowManager.LayoutParams.MATCH_PARENT
-
             showBubble()
 
-            // Start always-on mic
-            startContinuousListening()
         } catch (e: Exception) {
             Log.e(TAG, "Error in onCreate", e)
         }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        sessionId = intent?.getStringExtra("sessionID") ?: Random.nextInt(1000, 9999).toString()
+        sessionId = intent?.getStringExtra("sessionID")!!
         try {
             connectToWizardConsole()
-        } catch (e: Exception) {
-            Log.e(TAG, "Error on starting command", e)
+        }
+        catch (e : Exception){
+            Log.e(TAG, "Error on starting command")
         }
         return super.onStartCommand(intent, flags, startId)
     }
@@ -208,22 +202,45 @@ class OverlayService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         wizardClient?.disconnect()
-        stopContinuousListening()
+        stopRecording()
         bubbleView?.let { windowManager.removeView(it) }
         chatView?.let { windowManager.removeView(it) }
     }
 
-    // ==================== UI SETUP ======================================
+    private fun startAsForegroundService() {
+        val channelId = "senior_helper_overlay"
+        val channelName = "Senior Helper"
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_LOW)
+            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            nm.createNotificationChannel(channel)
+        }
+        val notification = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Notification.Builder(this, channelId)
+                    .setContentTitle("Mobile AI Helper")
+                    .setContentText("Active Session: $sessionId")
+                    .setSmallIcon(android.R.drawable.ic_dialog_info)
+                    .build()
+        } else {
+            @Suppress("DEPRECATION")
+            Notification.Builder(this).setContentTitle("Helper").setSmallIcon(android.R.drawable.ic_dialog_info).build()
+        }
+
+        // Android 14: Just Microphone type is enough since Jitsi handles the screen share separately
+        if (Build.VERSION.SDK_INT >= 34) {
+            startForeground(1, notification, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE)
+        } else {
+            startForeground(1, notification)
+        }
+    }
+
+    // ==================== UI SETUP ====================
     private fun connectToWizardConsole() {
         wizardClient = WizardConsoleClient(
             serverUrl = HTTP_SERVER_URL,
             sessionId = sessionId,
             onMessageReceived = { message ->
                 mainHandler.post {
-                    // Auto-open chat window if not yet visible so the first message isn't lost
-                    if (!isChatVisible) {
-                        showChatWindow()
-                    }
                     if (::messagesContainer.isInitialized) {
                         handleWizardPayload(message)
                         // Only scroll down if not showing tutorial (tutorial scrolls to top)
@@ -263,6 +280,7 @@ class OverlayService : Service() {
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
             else
                 WindowManager.LayoutParams.TYPE_PHONE,
+            // UPDATED FLAGS:
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                     WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
                     WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
@@ -338,6 +356,7 @@ class OverlayService : Service() {
     private fun showChatWindow() {
         if (chatView != null) return
 
+
         val chatLayout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             val drawable = GradientDrawable().apply {
@@ -348,7 +367,6 @@ class OverlayService : Service() {
             background = drawable
             clipToOutline = true
         }
-
         val headerLayout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             background = GradientDrawable().apply {
@@ -362,11 +380,15 @@ class OverlayService : Service() {
 
         val topRow = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
         }
+        val topRow2 = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_HORIZONTAL or Gravity.TOP
+        }
+
         minimizeButton = TextView(this).apply {
-            text = "\uD83D\uDCAC"
-            textSize = 28f
+            text = "💬"
+            textSize = 24f
             setTextColor(Color.WHITE)
             setTypeface(null, android.graphics.Typeface.BOLD)
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
@@ -377,35 +399,13 @@ class OverlayService : Service() {
         }
         titleView = TextView(this).apply {
             text = "AI 도우미"
-            textSize = 28f
+            textSize = 24f
             maxLines = 1
             setTextColor(Color.WHITE)
             setTypeface(null, android.graphics.Typeface.BOLD)
-            setPadding(20, 0, 20, 0)
+            setPadding(20,0,20,0)
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
-
-        workingAnimator = createAnimatedDots(0xFF42A5F5.toInt())
-        workingAnimator.visibility = View.GONE;
-        interveneButton = ImageButton(this).apply {
-            setImageResource(android.R.drawable.ic_media_pause)
-            setBackgroundColor(Color.TRANSPARENT)
-            setColorFilter(0xFFFFFFFF.toInt(), android.graphics.PorterDuff.Mode.SRC_IN)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {}
-            setOnClickListener {
-                performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                if (isMinimized) {
-                    toggleMinimize()
-                }
-                if (::messagesContainer.isInitialized) {
-                    clearMessage()
-                }
-            }
-        }
-        interveneButton.visibility = View.GONE
         repeatButton = ImageButton(this).apply {
             setImageResource(android.R.drawable.ic_menu_rotate)
             setBackgroundColor(Color.TRANSPARENT)
@@ -422,19 +422,42 @@ class OverlayService : Service() {
             isEnabled = false
             alpha = 1f
         }
+        interveneButton = Button(this).apply {
+            text = "일시 중지"
+            textSize = 20f
+            setPadding(16, 12, 16, 12)
+            setTextColor(0xFFFFFFFF.toInt())
+            setBackgroundColor(0xFFD32F2F.toInt())
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                setMargins(10,0,10,0)
+            }
+            setOnClickListener {
+                performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                if(isMinimized){
+                   toggleMinimize();
+                }
+                startRecording()
+            }
+        }
+        interveneButton.visibility = View.GONE
+        val closeButton = ImageButton(this).apply {
+            setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
+            setBackgroundColor(Color.TRANSPARENT)
+            setColorFilter(Color.WHITE)
+            setOnClickListener {
+                performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                hideChatWindow()
+            }
+        }
         topRow.addView(minimizeButton)
         topRow.addView(titleView)
-        topRow.addView(workingAnimator)
         topRow.addView(interveneButton)
         topRow.addView(repeatButton)
-        minimizedMessageContainer = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(20, 30, 20, 30)
-            gravity = Gravity.CENTER
-            visibility = View.GONE
-        }
+        topRow.addView(closeButton)
+
         headerLayout.addView(topRow)
-        headerLayout.addView(minimizedMessageContainer)
+        headerLayout.addView(topRow2)
+
 
         messagesScroll = ScrollView(this).apply {
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f)
@@ -447,23 +470,38 @@ class OverlayService : Service() {
         }
         messagesScroll.addView(messagesContainer)
 
-
+        controlsLayout = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(40, 30, 40, 30)
+            setBackgroundColor(Color.WHITE)
+            elevation = 8f
+            gravity = Gravity.CENTER
+        }
+        micButton = ImageButton(this).apply {
+            setImageResource(android.R.drawable.ic_btn_speak_now)
+            background = GradientDrawable().apply { shape = GradientDrawable.RECTANGLE; setColor(0xFF42A5F5.toInt()) }
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.MATCH_PARENT)
+            setColorFilter(Color.WHITE)
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            setPadding(40, 40, 40, 40)
+            setOnClickListener {
+                performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                if (!isRecording) startRecording() else stopRecording()
+            }
+        }
+        controlsLayout.addView(micButton)
 
         chatLayout.addView(headerLayout)
         chatLayout.addView(messagesScroll)
+        chatLayout.addView(controlsLayout)
 
         @Suppress("DEPRECATION")
         chatLayoutParams = WindowManager.LayoutParams(
-            MAX_CHAT_WIDTH, maxChatHeight,
+            MAX_CHAT_WIDTH, MAX_CHAT_HEIGHT,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY else WindowManager.LayoutParams.TYPE_PHONE,
             WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
             PixelFormat.TRANSLUCENT
         )
-        // // Overlay window size
-        // chatLayoutParams!!.gravity = Gravity.BOTTOM
-        // chatLayoutParams!!.y = 0
-
-        //Full screen window
         chatLayoutParams!!.gravity = Gravity.TOP
         chatLayoutParams!!.y = 100
 
@@ -496,14 +534,13 @@ class OverlayService : Service() {
                 return false
             }
         })
-
         chatView = chatLayout
         windowManager.addView(chatView, chatLayoutParams)
         isChatVisible = true
     }
 
     private fun hideChatWindow() {
-        //continuous listening continues even when chat is hidden
+        if (isRecording) stopRecording()
         chatView?.let {
             windowManager.removeView(it)
             chatView = null
@@ -517,40 +554,34 @@ class OverlayService : Service() {
         if (chatView == null || chatLayoutParams == null) return
 
         isMinimized = !isMinimized
-
-        if(!isSpeaking&& isMinimized){
-            workingAnimator.visibility = View.VISIBLE;
-        }
+        clearMessage()
         if (isMinimized) {
             // Hide content, show only header
             messagesScroll.visibility = View.GONE
+            if (::controlsLayout.isInitialized) {
+                controlsLayout.visibility = View.GONE
+            }
+
             interveneButton.visibility = View.VISIBLE
-            minimizedMessageContainer.visibility = View.VISIBLE
             chatLayoutParams!!.height = MIN_CHAT_HEIGHT
-            chatLayoutParams!!.width = MAX_CHAT_WIDTH
+            chatLayoutParams!!.width = MIN_CHAT_WIDTH
             titleView.text = "작동중"
-            val displayMetrics = DisplayMetrics()
-            @Suppress("DEPRECATION")
-            windowManager.defaultDisplay.getMetrics(displayMetrics)
-            chatLayoutParams!!.gravity = Gravity.TOP
-            chatLayoutParams!!.y = 0
         } else {
             // Restore full view
             messagesScroll.visibility = View.VISIBLE
+            if (::controlsLayout.isInitialized) {
+                controlsLayout.visibility = View.VISIBLE
+            }
+
             interveneButton.visibility = View.GONE
-            minimizedMessageContainer.visibility = View.GONE
-            chatLayoutParams!!.height = maxChatHeight
+            chatLayoutParams!!.height = MAX_CHAT_HEIGHT
             chatLayoutParams!!.width = MAX_CHAT_WIDTH
             titleView.text = "AI 도우미"
-            // Full screen window
-            chatLayoutParams!!.gravity = Gravity.TOP
-            chatLayoutParams!!.y = 100
-            // Overlay window version:
-            // chatLayoutParams!!.gravity = Gravity.BOTTOM
-            // chatLayoutParams!!.y = 0
         }
 
         windowManager.updateViewLayout(chatView, chatLayoutParams)
+
+        // Update minimize button icon
     }
 
     private fun repeatLastMessage() {
@@ -565,29 +596,42 @@ class OverlayService : Service() {
         Log.i(TAG, "Repeated assistant message: $message")
     }
 
-    private val activeDotAnimators = mutableListOf<ValueAnimator>()
-
     private fun clearMessage() {
-        activeDotAnimators.forEach { it.cancel() }
-        activeDotAnimators.clear()
-        clearAgentMessage()
-        clearUserStatusMessage()
+        clearAgentMessage();
+        clearUserStateMesssage()
     }
-
     private fun clearAgentMessage() {
-        for (view in agentResponseViewList) {
-            messagesContainer.removeView(view)
+        for (messageView in agentResponseViewList){
+            messagesContainer.removeView(messageView)
+            agentResponseViewList.remove(messageView)
         }
-        agentResponseViewList.clear()
+    }
+    private fun clearUserStateMesssage() {
+        for (messageView in userStatusViewList){
+            messagesContainer.removeView(messageView);
+            userStatusViewList.remove(messageView)
+        }
     }
 
-    private fun clearUserStatusMessage() {
-        Log.i("userStatusViewList", userStatusViewList.size.toString())
-        for (view in userStatusViewList) {
-            messagesContainer.removeView(view)
-            minimizedMessageContainer.removeView(view)
+    private fun showUserMessage(message: String) {
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER
         }
-        userStatusViewList.clear()
+        val text = TextView(this).apply {
+            text = message; textSize = 34f; setTextColor(Color.WHITE)
+            background = GradientDrawable().apply { shape = GradientDrawable.RECTANGLE; cornerRadius = 35f; setColor(0xFF42A5F5.toInt()) }
+            setPadding(40, 35, 40, 35)
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(0, 0, 20, 0) }
+        }
+        val icon = createIcon(android.R.drawable.ic_menu_myplaces)
+        row.addView(text)
+        row.addView(icon)
+        showUserMessage(row)
+    }
+    private fun showUserMessage(message : View){
+        clearUserStateMesssage()
+        messagesContainer.addView(message)
+        userStatusViewList.add(message)
     }
 
     private fun showAssistantResponse(message: String) {
@@ -622,397 +666,58 @@ class OverlayService : Service() {
         clovaTTS(message)
     }
 
-    private fun createAnimatedDots(color: Int): LinearLayout {
-        val dotsRow = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
-            setPadding(0, 20, 0, 15)
-        }
-        val dotSize = 24f
-        val amplitude = 22f
-        val duration = 600L
-
-        for (i in 0 until 3) {
-            val dot = TextView(this).apply {
-                text = "●"; textSize = dotSize; setTextColor(color)
-                gravity = Gravity.CENTER
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply { setMargins(16, 0, 16, 0) }
-            }
-            dotsRow.addView(dot)
-
-            val animator = ValueAnimator.ofFloat(0f, -amplitude, 0f, amplitude * 0.3f, 0f).apply {
-                this.duration = duration
-                startDelay = i * (duration / 3)
-                repeatCount = ValueAnimator.INFINITE
-                addUpdateListener { dot.translationY = it.animatedValue as Float }
-                start()
-            }
-            activeDotAnimators.add(animator)
-        }
-        return dotsRow
-    }
-
     private fun showLoadingBubbles() {
-        clearUserStatusMessage()
-        val bubble = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
-            background = GradientDrawable().apply { shape = GradientDrawable.RECTANGLE; cornerRadius = 50f; setColor(0xFFE3F2FD.toInt()) }
-            setPadding(80, 50, 80, 40)
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { gravity = Gravity.CENTER }
+        val text = TextView(this).apply {
+            text = "●  ●  ●"; textSize = 40f; setTextColor(0xFF90CAF9.toInt()); gravity = Gravity.CENTER
+            background = GradientDrawable().apply { shape = GradientDrawable.RECTANGLE; cornerRadius = 45f; setColor(0xFFE3F2FD.toInt()) }
+            setPadding(60, 50, 60, 50)
         }
-        val label = TextView(this).apply {
-            text = "듣고 있어요"; textSize = 38f; setTextColor(0xFF42A5F5.toInt()); gravity = Gravity.CENTER
-        }
-        bubble.addView(label)
-        bubble.addView(createAnimatedDots(0xFF42A5F5.toInt()))
-
-        if (isMinimized)
-        {
-            minimizedMessageContainer.addView(bubble)
-            userStatusViewList.add(bubble)
-        }
-        else {
-            messagesContainer.addView(bubble)
-            userStatusViewList.add(bubble)
-        }
+        showUserMessage(text)
     }
 
-    private fun createCircularDots(color: Int): FrameLayout {
-        val sizePx = 110
-        val radius = 28f
-        val dotSize = 18f
-        val duration = 1200L
-
-        val container = FrameLayout(this).apply {
-            layoutParams = LinearLayout.LayoutParams(sizePx, sizePx).apply { gravity = Gravity.CENTER }
-        }
-
-        for (i in 0 until 4) {
-            val dot = TextView(this).apply {
-                text = "●"; textSize = dotSize; setTextColor(color)
-                layoutParams = FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.WRAP_CONTENT,
-                    FrameLayout.LayoutParams.WRAP_CONTENT,
-                    Gravity.CENTER
-                )
-            }
-            container.addView(dot)
-
-            val phaseOffset = i * (2.0 * Math.PI / 4.0)
-            val animator = ValueAnimator.ofFloat(0f, (2.0 * Math.PI).toFloat()).apply {
-                this.duration = duration
-                repeatCount = ValueAnimator.INFINITE
-                interpolator = android.view.animation.LinearInterpolator()
-                addUpdateListener { anim ->
-                    val angle = (anim.animatedValue as Float).toDouble() + phaseOffset
-                    dot.translationX = (radius * Math.cos(angle)).toFloat()
-                    dot.translationY = (radius * Math.sin(angle)).toFloat()
-                }
-                start()
-            }
-            activeDotAnimators.add(animator)
-        }
-        return container
+    private fun updateMicButton(recording: Boolean) {
+        if (!::micButton.isInitialized) return
+        val color = if (recording) 0xFFE53935.toInt() else 0xFF42A5F5.toInt()
+        micButton.background = GradientDrawable().apply { setColor(color) }
+        if (recording) showUserMessage("듣고 있어요...")
     }
 
-    private fun showThinkingBubbles() {
-        clearUserStatusMessage()
-        val row = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER
-        }
-        val icon = createIcon(R.drawable.chat_icon)
-        val bubble = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER_HORIZONTAL
-            background = GradientDrawable().apply { shape = GradientDrawable.RECTANGLE; cornerRadius = 50f; setColor(0xFFE3F2FD.toInt()) }
-            setPadding(80, 50, 80, 40)
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(20, 0, 0, 0) }
-        }
-        val label = TextView(this).apply {
-            text = "생각 중"; textSize = 38f; setTextColor(0xFF42A5F5.toInt()); gravity = Gravity.CENTER
-            setSingleLine(true)
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { gravity = Gravity.CENTER_HORIZONTAL }
-        }
-        val dotsContainer = createCircularDots(0xFF42A5F5.toInt())
-        bubble.addView(label)
-        bubble.addView(dotsContainer)
-        row.addView(icon)
-        row.addView(bubble)
-        messagesContainer.addView(row)
-        userStatusViewList.add(row)
-    }
+    // ==================== AUDIO LOGIC (RECORDING LOGS ONLY) ====================
 
-    // ==================== AUDIO LOGIC (ALWAYS-ON RECORDING & CLOVA) ====================
+    private var speechStartTime = 0L
 
+    private fun startRecording() {
+        if (isRecording) return
+        isRecording = true
+        speechStartTime = System.currentTimeMillis()
 
-    // Calculate the RMS (Root Mean Square) amplitude of PCM 16-bit audio samples.
-
-    private fun calculateRMS(audioBytes: ByteArray, bytesRead: Int): Double {
-        var sum = 0.0
-        val samples = bytesRead / 2  // 16-bit = 2 bytes per sample
-        for (i in 0 until samples) {
-            val low = audioBytes[i * 2].toInt() and 0xFF
-            val high = audioBytes[i * 2 + 1].toInt()
-            val sample = (high shl 8) or low
-            sum += sample.toDouble() * sample.toDouble()
-        }
-        return if (samples > 0) kotlin.math.sqrt(sum / samples) else 0.0
-    }
-
-
-    private fun startContinuousListening() {
-        if (isContinuousListening) {
-            Log.w(TAG, "Continuous listening already active")
-            return
-        }
-
-        Thread {
-            try {
-                val bufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT)
-                recorder = AudioRecord(
-                    MediaRecorder.AudioSource.MIC, SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT, bufferSize
-                )
-
-                if (recorder?.state != AudioRecord.STATE_INITIALIZED) {
-                    Log.e(TAG, "Continuous Audio Record Init Failed")
-                    return@Thread
-                }
-
-                isContinuousListening = true
-                isRecording = true
-                recorder?.startRecording()
-
-                Log.i(TAG, "Continuous listening started with VAD")
-
-                val tempBuf = ByteArray(bufferSize)
-                var speechBuffer = ByteArrayOutputStream()  // Accumulates audio during speech
-                var lastSpeechTime = 0L    // Last time speech was detected
-
-
-                val preSpeechCapacity = SAMPLE_RATE * 2
-                val preSpeechRing = java.util.LinkedList<ByteArray>()
-                var preSpeechSize = 0
-
-                while (isContinuousListening) {
-                    val currentRecorder = recorder ?: break
-                    val read = currentRecorder.read(tempBuf, 0, tempBuf.size)
-                    if (read <= 0) continue
-
-                    val now = System.currentTimeMillis()
-                    val rms = calculateRMS(tempBuf, read)
-                    val hasSpeech = rms > VAD_SPEECH_THRESHOLD
-
-
-                    if (isTTSPlaying) {
-                        if (isSpeaking) {
-                            // TTS started while user was speaking — end speech state
-                            onSpeechEnd(speechBuffer.toByteArray(), speechStartTime)
-                            speechBuffer = ByteArrayOutputStream()
-                        }
-
-                        preSpeechRing.clear()
-                        preSpeechSize = 0
-                        continue
-                    }
-
-                    if (hasSpeech) {
-                        lastSpeechTime = now
-
-                        if (!isSpeaking) {
-                            // Speech just started
-                            speechStartTime = now
-                            speechBuffer = ByteArrayOutputStream()
-
-                            for (chunk in preSpeechRing) {
-                                speechBuffer.write(chunk)
-                            }
-                            preSpeechRing.clear()
-                            preSpeechSize = 0
-
-                            onSpeechStart()
-                        }
-
-                        // Accumulate audio
-                        speechBuffer.write(tempBuf, 0, read)
-
-                        // Auto-split if speaking too long (CLOVA CSR ~60s limit)
-                        if (now - speechStartTime >= VAD_MAX_UTTERANCE_MS) {
-                            Log.i(TAG, "VAD: Auto-splitting at 60s")
-                            val audioBytes = speechBuffer.toByteArray()
-                            val utteranceStart = speechStartTime
-                            onSpeechAutoSplit(audioBytes, utteranceStart)
-
-                            speechBuffer = ByteArrayOutputStream()
-                            speechStartTime = now
-                        }
-
-                    } else if (isSpeaking) {
-                        speechBuffer.write(tempBuf, 0, read)
-
-                        if (now - lastSpeechTime >= VAD_SILENCE_DURATION_MS) {
-                            val speechDuration = now - speechStartTime
-
-                            if (speechDuration >= VAD_MIN_SPEECH_MS) {
-                                val audioBytes = speechBuffer.toByteArray()
-                                val utteranceStart = speechStartTime
-                                onSpeechEnd(audioBytes, utteranceStart)
-                            } else {
-                                // Too short — noise burst, discard
-                                Log.d(TAG, "Discarding short audio burst (${speechDuration}ms)")
-                                onSpeechEnd(null, speechStartTime)
-                            }
-
-                            speechBuffer = ByteArrayOutputStream()
-                        }
-                    }
-
-                    if (!isSpeaking) {
-                        val chunk = tempBuf.copyOf(read)
-                        preSpeechRing.add(chunk)
-                        preSpeechSize += read
-                        while (preSpeechSize > preSpeechCapacity && preSpeechRing.isNotEmpty()) {
-                            preSpeechSize -= preSpeechRing.removeFirst().size
-                        }
-                    }
-                }
-
-            } catch (e: Exception) {
-                Log.e(TAG, "Continuous listening error", e)
-            }
-        }.start()
-    }
-
-
-    //  Called when VAD detects the user started speaking.
-    //  Shows "..." indicator on mobile and notifies wizard console.
-
-    private fun onSpeechStart() {
-        Log.i(TAG, "VAD: Speech started")
-
-        // Clear screen and show listening indicator
         mainHandler.post {
-            if (::messagesContainer.isInitialized) {
-                messagesContainer.removeAllViews()
-                agentResponseViewList.clear()
-                userStatusViewList.clear()
-                activeDotAnimators.forEach { it.cancel() }
-                activeDotAnimators.clear()
-                showLoadingBubbles()
-            }
-            else if (::minimizedMessageContainer.isInitialized){
-                minimizedMessageContainer.removeAllViews()
-                userStatusViewList.clear()
-                activeDotAnimators.forEach { it.cancel() }
-                activeDotAnimators.clear()
-                showLoadingBubbles()
+            updateMicButton(true)
+            stopCurrentAudio()
+            if (isTutorialVisible) {
+                hideTutorialCard()
             }
         }
-
-        // Notify wizard console
+        
         wizardClient?.sendEvent("speaking_started")
-        isSpeaking = true
-
-        if(!isSpeaking&& isMinimized){
-            workingAnimator.visibility = View.VISIBLE;
-        }
+        Log.i(TAG, "Speech recording started")
     }
 
+    private fun stopRecording() {
+        if (!isRecording) return
+        isRecording = false
 
-    private fun onSpeechAutoSplit(audioBytes: ByteArray, utteranceStartTime: Long) {
-        val durationMs = System.currentTimeMillis() - utteranceStartTime
-        Log.i(TAG, "VAD: Auto-split chunk (duration: ${durationMs}ms, audio: ${audioBytes.size} bytes)")
+        val durationMs = System.currentTimeMillis() - speechStartTime
 
-        clovaSTT(audioBytes) { text ->
-            val isoTimestamp = java.text.SimpleDateFormat(
-                "yyyy-MM-dd'T'HH:mm:ss.SSS", java.util.Locale.getDefault()
-            ).format(java.util.Date(utteranceStartTime))
-
-            if (!text.isNullOrEmpty()) {
-                wizardClient?.sendEvent("voice_transcript", mapOf(
-                    "text" to text,
-                    "chunk_timestamp" to isoTimestamp,
-                    "auto_split" to true
-                ))
-
-                wizardClient?.sendMessage(text)
-                Log.i(TAG, "Auto-split transcript: \"$text\" at $isoTimestamp")
-            } else {
-                Log.d(TAG, "Auto-split STT returned empty at $isoTimestamp")
-            }
+        mainHandler.post {
+            updateMicButton(false)
         }
-    }
-
-
-    private fun onSpeechEnd(audioBytes: ByteArray?, utteranceStartTime: Long) {
-        val durationMs = System.currentTimeMillis() - utteranceStartTime
-        Log.i(TAG, "VAD: Speech ended (duration: ${durationMs}ms, audio: ${audioBytes?.size ?: 0} bytes)")
 
         wizardClient?.sendEvent("speaking_stopped", mapOf(
             "duration_ms" to durationMs
         ))
-
-        if (audioBytes == null || audioBytes.isEmpty()) {
-            // No valid audio — just hide indicator
-            mainHandler.post {
-                if (::messagesContainer.isInitialized) {
-                    clearUserStatusMessage()  // Remove listening bubbles
-                }
-            }
-            return
-        }
-
-        // Send to STT
-        clovaSTT(audioBytes) { text ->
-            val isoTimestamp = java.text.SimpleDateFormat(
-                "yyyy-MM-dd'T'HH:mm:ss.SSS", java.util.Locale.getDefault()
-            ).format(java.util.Date(utteranceStartTime))
-
-            if (!text.isNullOrEmpty()) {
-                // Log voice transcript event
-                wizardClient?.sendEvent("voice_transcript", mapOf(
-                    "text" to text,
-                    "chunk_timestamp" to isoTimestamp
-                ))
-
-                mainHandler.post {
-                    if (::messagesContainer.isInitialized) {
-                        showThinkingBubbles()
-                        wizardClient?.sendMessage(text)
-                    }
-                }
-
-                Log.i(TAG, "Transcript: \"$text\" at $isoTimestamp")
-            } else {
-                // STT returned empty — remove loading bubbles
-                mainHandler.post {
-                    if (::messagesContainer.isInitialized) {
-                        clearUserStatusMessage()
-                    }
-                }
-                Log.d(TAG, "STT returned empty for utterance at $isoTimestamp")
-            }
-        }
-        isSpeaking = false
-
-        if(!isSpeaking&& isMinimized){
-            workingAnimator.visibility = View.VISIBLE;
-        }
-    }
-
-
-    private fun stopContinuousListening() {
-        isContinuousListening = false
-        isSpeaking = false
-        isRecording = false
-        try {
-            recorder?.stop()
-            recorder?.release()
-            recorder = null
-        } catch (_: Exception) {}
-        Log.i(TAG, "Continuous listening stopped")
+        
+        Log.i(TAG, "Speech recording stopped (duration: ${durationMs}ms)")
     }
 
     // ==================== CLOVA API ====================
@@ -1100,8 +805,6 @@ class OverlayService : Service() {
             // Stop any currently playing audio
             stopCurrentAudio()
 
-            isTTSPlaying = true  // Flag to prevent STT during TTS playback
-
             val tempFile = File.createTempFile("tts", ".mp3", cacheDir)
             tempFile.writeBytes(audioBytes)
             val mp = MediaPlayer()
@@ -1112,21 +815,9 @@ class OverlayService : Service() {
                 it.release()
                 tempFile.delete()
                 if (currentMediaPlayer == it) currentMediaPlayer = null
-                isTTSPlaying = false  // TTS finished, resume transcript processing
-            }
-            mp.setOnErrorListener { player, what, extra ->
-                Log.e(TAG, "MediaPlayer error: what=$what, extra=$extra")
-                player.release()
-                tempFile.delete()
-                if (currentMediaPlayer == player) currentMediaPlayer = null
-                isTTSPlaying = false  // Error occurred, resume transcript processing
-                true
             }
             mp.prepareAsync()
-        } catch (e: Exception) {
-            Log.e(TAG, "Play Error", e)
-            isTTSPlaying = false
-        }
+        } catch (e: Exception) { Log.e(TAG, "Play Error", e) }
     }
 
     private fun stopCurrentAudio() {
@@ -1136,10 +827,8 @@ class OverlayService : Service() {
                 it.release()
             }
             currentMediaPlayer = null
-            isTTSPlaying = false
         } catch (e: Exception) {
             Log.e(TAG, "Error stopping audio", e)
-            isTTSPlaying = false
         }
     }
 
@@ -1242,6 +931,15 @@ class OverlayService : Service() {
             }
         }
 
+        // Step indicator (e.g., "1/5")
+        val stepIndicator = TextView(this).apply {
+            text = "$step/$total"
+            textSize = 24f
+            setTextColor(0xFF6D4C41.toInt()) // Brown
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            gravity = Gravity.END
+        }
+
         // Title
         val titleView = TextView(this).apply {
             text = titleKo
@@ -1259,6 +957,7 @@ class OverlayService : Service() {
             lineHeight = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 38f, resources.displayMetrics).toInt()
         }
 
+        cardLayout.addView(stepIndicator)
         cardLayout.addView(titleView)
         cardLayout.addView(bodyView)
 
