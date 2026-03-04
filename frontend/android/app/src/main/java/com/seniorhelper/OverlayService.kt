@@ -10,6 +10,8 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.graphics.Color
 import android.graphics.PixelFormat
+import android.graphics.PorterDuff
+import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.media.AudioFormat
 import android.media.AudioRecord
@@ -46,7 +48,64 @@ import java.net.URL
 import java.net.URLEncoder
 import kotlin.random.Random
 import com.mobileaihelper.BuildConfig
+import android.os.Bundle
+import android.view.animation.LinearInterpolator
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.OutlinedTextField
+// Core Modifier
+import androidx.compose.ui.Modifier
 
+// Layout modifiers (padding, fillMaxWidth, size, wrapContentSize)
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+
+import androidx.compose.foundation.clickable
+
+import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.tooling.preview.Preview
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.LinkedList
+import java.util.Locale
+import kotlin.math.abs
+import kotlin.math.sqrt
+
+@Composable
+fun HelloContent() {
+    Column(modifier = Modifier.padding(16.dp)) {
+        val (name, setName) = remember { mutableStateOf("") }
+        if (name.isNotEmpty()) {
+            Text(
+                text = "Hello, $name!",
+                modifier = Modifier.padding(bottom = 8.dp),
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+        OutlinedTextField(
+            value = name,
+            onValueChange = setName,
+            label = { Text("Name") }
+        )
+    }
+}
+@Preview
+@Composable
+fun PreviewHelloContent() {
+    HelloContent()
+}
 
 class OverlayService : Service() {
 
@@ -112,7 +171,7 @@ class OverlayService : Service() {
     // Always-on continuous listening with Voice Activity Detection
     private var isContinuousListening = false
     @Volatile private var isTTSPlaying = false
-    @Volatile private var isSpeaking = false  // VAD: is user currently speaking?
+    @Volatile private var isSpeaking = false
     private var speechStartTime = 0L           // When current speech began
 
     companion object {
@@ -138,7 +197,7 @@ class OverlayService : Service() {
         try {
             updateForegroundService(enableScreenShare = false)
 
-            windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+            windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
 
             // //Overlay window size
             // val displayMetrics = DisplayMetrics()
@@ -291,7 +350,7 @@ class OverlayService : Service() {
                     MotionEvent.ACTION_MOVE -> {
                         val deltaX = event.rawX - touchedX
                         val deltaY = event.rawY - touchedY
-                        if (kotlin.math.abs(deltaX) > 10 || kotlin.math.abs(deltaY) > 10) isDragging = true
+                        if (abs(deltaX) > 10 || abs(deltaY) > 10) isDragging = true
                         layoutParams.x = lastX - deltaX.toInt()
                         layoutParams.y = lastY + deltaY.toInt()
                         windowManager.updateViewLayout(bubbleLayout, layoutParams)
@@ -367,7 +426,7 @@ class OverlayService : Service() {
             text = "\uD83D\uDCAC"
             textSize = 28f
             setTextColor(Color.WHITE)
-            setTypeface(null, android.graphics.Typeface.BOLD)
+            setTypeface(null, Typeface.BOLD)
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
             setOnClickListener {
                 performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
@@ -379,14 +438,14 @@ class OverlayService : Service() {
             textSize = 28f
             maxLines = 1
             setTextColor(Color.WHITE)
-            setTypeface(null, android.graphics.Typeface.BOLD)
+            setTypeface(null, Typeface.BOLD)
             setPadding(20, 0, 20, 0)
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
         interveneButton = ImageButton(this).apply {
             setImageResource(android.R.drawable.ic_media_pause)
             setBackgroundColor(Color.TRANSPARENT)
-            setColorFilter(0xFFFFFFFF.toInt(), android.graphics.PorterDuff.Mode.SRC_IN)
+            setColorFilter(0xFFFFFFFF.toInt(), PorterDuff.Mode.SRC_IN)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -405,7 +464,7 @@ class OverlayService : Service() {
         repeatButton = ImageButton(this).apply {
             setImageResource(android.R.drawable.ic_menu_rotate)
             setBackgroundColor(Color.TRANSPARENT)
-            setColorFilter(0xFFFFFFFF.toInt(), android.graphics.PorterDuff.Mode.SRC_IN)
+            setColorFilter(0xFFFFFFFF.toInt(), PorterDuff.Mode.SRC_IN)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -481,7 +540,7 @@ class OverlayService : Service() {
                     MotionEvent.ACTION_MOVE -> {
                         val deltaX = event.rawX - touchedX
                         val deltaY = event.rawY - touchedY
-                        if (kotlin.math.abs(deltaX) > 10 || kotlin.math.abs(deltaY) > 10) isDragging = true
+                        if (abs(deltaX) > 10 || abs(deltaY) > 10) isDragging = true
                         chatLayoutParams!!.x = lastX + deltaX.toInt()
                         chatLayoutParams!!.y = lastY + deltaY.toInt()
                         windowManager.updateViewLayout(chatView, chatLayoutParams)
@@ -699,7 +758,7 @@ class OverlayService : Service() {
             val animator = ValueAnimator.ofFloat(0f, (2.0 * Math.PI).toFloat()).apply {
                 this.duration = duration
                 repeatCount = ValueAnimator.INFINITE
-                interpolator = android.view.animation.LinearInterpolator()
+                interpolator = LinearInterpolator()
                 addUpdateListener { anim ->
                     val angle = (anim.animatedValue as Float).toDouble() + phaseOffset
                     dot.translationX = (radius * Math.cos(angle)).toFloat()
@@ -753,7 +812,7 @@ class OverlayService : Service() {
             val sample = (high shl 8) or low
             sum += sample.toDouble() * sample.toDouble()
         }
-        return if (samples > 0) kotlin.math.sqrt(sum / samples) else 0.0
+        return if (samples > 0) sqrt(sum / samples) else 0.0
     }
 
 
@@ -787,7 +846,7 @@ class OverlayService : Service() {
 
 
                 val preSpeechCapacity = SAMPLE_RATE * 2
-                val preSpeechRing = java.util.LinkedList<ByteArray>()
+                val preSpeechRing = LinkedList<ByteArray>()
                 var preSpeechSize = 0
 
                 while (isContinuousListening) {
@@ -916,9 +975,9 @@ class OverlayService : Service() {
         Log.i(TAG, "VAD: Auto-split chunk (duration: ${durationMs}ms, audio: ${audioBytes.size} bytes)")
 
         clovaSTT(audioBytes) { text ->
-            val isoTimestamp = java.text.SimpleDateFormat(
-                "yyyy-MM-dd'T'HH:mm:ss.SSS", java.util.Locale.getDefault()
-            ).format(java.util.Date(utteranceStartTime))
+            val isoTimestamp = SimpleDateFormat(
+                "yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.getDefault()
+            ).format(Date(utteranceStartTime))
 
             if (!text.isNullOrEmpty()) {
                 wizardClient?.sendEvent("voice_transcript", mapOf(
@@ -956,9 +1015,9 @@ class OverlayService : Service() {
 
         // Send to STT
         clovaSTT(audioBytes) { text ->
-            val isoTimestamp = java.text.SimpleDateFormat(
-                "yyyy-MM-dd'T'HH:mm:ss.SSS", java.util.Locale.getDefault()
-            ).format(java.util.Date(utteranceStartTime))
+            val isoTimestamp = SimpleDateFormat(
+                "yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.getDefault()
+            ).format(Date(utteranceStartTime))
 
             if (!text.isNullOrEmpty()) {
                 // Log voice transcript event
@@ -1233,7 +1292,7 @@ class OverlayService : Service() {
             text = titleKo
             textSize = 32f
             setTextColor(0xFF6D4C41.toInt())
-            setTypeface(null, android.graphics.Typeface.BOLD)
+            setTypeface(null, Typeface.BOLD)
             setPadding(0, 5, 0, 10)
         }
 
@@ -1334,7 +1393,7 @@ class OverlayService : Service() {
             text = prompt
             textSize = 28f
             setTextColor(0xFF1565C0.toInt())
-            setTypeface(null, android.graphics.Typeface.BOLD)
+            setTypeface(null, Typeface.BOLD)
             gravity = Gravity.CENTER
             setPadding(0, 0, 0, 20)
         }
