@@ -80,14 +80,29 @@ const newResponseContent = document.getElementById('newResponseContent');
 let currentTutorialStep = 0;
 const tutorialSteps = [
     { step: 1, total: 7, title_ko: "도움말", body_ko: "안녕하세요! 저는 당신이 휴대폰을 편하게 사용할 수 있도록 도와주는 AI입니다." },
-    { step: 2, total: 7, title_ko: "도움말", body_ko: "휴대폰으로 하고 싶은 일이 있으시면 그냥 말씀해 주세요. 제가 답해 드릴게요." },
+    { step: 2, total: 7, title_ko: "도움말", body_ko: "휴대폰으로 하고 싶은 일이 있으시면 편하게 말씀해 주세요. 제가 답해 드릴게요." },
     { step: 3, total: 7, title_ko: "도움말", body_ko: "요청하신 내용을 제가 제대로 이해했는지 확인한 이후에, 휴대폰 사용을 도와드릴게요." },
-    { step: 4, total: 7, title_ko: "도움말", body_ko: "가끔, 사용자분께 직접 휴대폰 조작하셔야 할 때가 있어요. 그럴 때는, 제가 \"어디를 누르세요\"라고 말씀드릴게요." },
+    { step: 4, total: 7, title_ko: "도움말", body_ko: "가끔, 사용자분께서 직접 휴대폰을 조작하셔야 할 때가 있어요. 그럴 때는, 제가 \"어디를 누르세요\"라고 말씀드릴게요." },
     { step: 5, total: 7, title_ko: "도움말", body_ko: "혹시나 헷갈리거나 이해가 안되는 내용이 있으시면, 제게 말씀해주시면 안내드리겠습니다." },
     { step: 6, total: 7, title_ko: "도움말", body_ko: "상단의 반복 버튼을 누르면 제가 말씀 드린 내용을 다시 들을 수 있어요." },
     { step: 7, total: 7, title_ko: "도움말", body_ko: "혹시나 제가 도와드리는 동안 중간에 불편한 점이 생기시거나, 설명이 필요하신 부분이 있으시면, 위의 일시정지 버튼을 눌러서 알려주시면 도와드리겠습니다." }
+]
 
-];
+function populateTutorialDropdown() {
+    const select = document.getElementById('tutorialStepSelect');
+    if (!select) return;
+    select.innerHTML = '';
+    tutorialSteps.forEach(opt => {
+        const el = document.createElement('option');
+        el.value = opt.step;
+        el.textContent = `${opt.step}. ${opt.body_ko}`;
+        select.appendChild(el);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    populateTutorialDropdown();
+});
 
 async function sendTutorialCommand(tutorialData) {
     if (!currentSessionId) {
