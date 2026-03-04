@@ -373,6 +373,67 @@ function parseChoicesCommand(text) {
     }
 }
 
+// ==================== OVERLAY TEXT CONTROLS ====================
+const OVERLAY_DEFAULT_THINKING = '생각 중';
+const OVERLAY_DEFAULT_LISTENING = '듣고 있어요';
+
+function setOverlayTextStatus(msg) {
+    const el = document.getElementById('overlayTextStatus');
+    if (!el) return;
+    el.textContent = msg || '';
+}
+
+async function sendOverlayText() {
+    if (!currentSessionId) {
+    alert('Connect to a session first!');
+    return;
+    }
+
+    const thinkingText = (document.getElementById('overlayThinkingText').value || '').trim();
+    const listeningText = (document.getElementById('overlayListeningText').value || '').trim();
+
+    if (!thinkingText && !listeningText) {
+    alert('Please enter at least one text value');
+    return;
+    }
+
+    const payload = {
+    type: 'overlay_text',
+    thinking_text: thinkingText || OVERLAY_DEFAULT_THINKING,
+    listening_text: listeningText || OVERLAY_DEFAULT_LISTENING
+    };
+
+    try {
+    await fetch(`${API_URL}/message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: currentSessionId, role: 'wizard', text: JSON.stringify(payload) })
+    });
+    console.log('Overlay text command sent:', payload);
+    setOverlayTextStatus('Sent ✅');
+    loadMessages();
+    } catch (e) {
+    alert('Error sending overlay text command: ' + e);
+    setOverlayTextStatus('Send failed');
+    }
+}
+
+function resetOverlayText() {
+    document.getElementById('overlayThinkingText').value = OVERLAY_DEFAULT_THINKING;
+    document.getElementById('overlayListeningText').value = OVERLAY_DEFAULT_LISTENING;
+    setOverlayTextStatus('Reset to defaults');
+}
+
+function parseOverlayTextCommand(text) {
+    try {
+    const json = JSON.parse(text);
+    if (json && json.type === 'overlay_text') return json;
+    return null;
+    } catch (e) {
+    return null;
+    }
+}
+
 // ==================== TASK FLOWS ====================
 let TASK_FLOWS_CATEGORIES = [];
 let TASK_FLOWS_TASKS = [];
@@ -842,6 +903,7 @@ function displayMessages(messages) {
     messages.forEach((msg) => {
     const tutorialData = parseTutorialCommand(msg.text);
     const choicesData = parseChoicesCommand(msg.text);
+    const overlayTextData = parseOverlayTextCommand(msg.text);
     const eventData = parseEventData(msg.text);
 
     if (eventData) {
@@ -894,6 +956,23 @@ function displayMessages(messages) {
         <div class="message-meta">📋 CHOICES SENT</div>
         <div style="font-weight:bold; color:#2E7D32;">${escapeHtml(choicesData.prompt || '')}</div>
         <div style="margin-top:8px; padding:8px; background:#fff; border-radius:6px; font-size:13px;">${optionsList}</div>
+        <div class="message-timestamp">${formatTimestamp(msg.timestamp)}</div>
+        `;
+
+        container.appendChild(div);
+    } else if (overlayTextData) {
+        const div = document.createElement('div');
+        div.className = 'message wizard';
+        div.style.background = '#EDE7F6';
+        div.style.border = '2px solid #7E57C2';
+
+        div.innerHTML = `
+        ${gapHtml}
+        <div class="message-meta" style="color:#4527A0;">🎭 OVERLAY TEXT UPDATED</div>
+        <div style="margin-top:6px; font-size:13px; color:#4527A0;">
+            <strong>Thinking:</strong> ${escapeHtml(overlayTextData.thinking_text || '')}<br>
+            <strong>Listening:</strong> ${escapeHtml(overlayTextData.listening_text || '')}
+        </div>
         <div class="message-timestamp">${formatTimestamp(msg.timestamp)}</div>
         `;
 

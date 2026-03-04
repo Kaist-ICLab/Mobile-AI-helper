@@ -422,6 +422,78 @@
       margin-top: 8px;
     }
 
+    /* ==================== OVERLAY TEXT CONTROLS ==================== */
+    .overlay-text-controls {
+      margin-bottom: 15px;
+      padding: 15px;
+      background: #EDE7F6;
+      border: 2px solid #7E57C2;
+      border-radius: 8px;
+    }
+    .overlay-text-controls h4 {
+      margin: 0 0 12px 0;
+      color: #4527A0;
+      font-size: 16px;
+    }
+    .overlay-text-controls label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #4527A0;
+      margin: 8px 0 4px 0;
+    }
+    .overlay-text-controls label:first-of-type {
+      margin-top: 0;
+    }
+    .overlay-text-controls input {
+      width: 100%;
+      padding: 8px;
+      border: 2px solid #B39DDB;
+      border-radius: 5px;
+      font-size: 14px;
+      font-family: inherit;
+      background: white;
+    }
+    .overlay-text-controls input:focus {
+      outline: none;
+      border-color: #7E57C2;
+    }
+    .overlay-text-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .overlay-text-buttons button {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .overlay-text-buttons .send-btn {
+      background: #7E57C2;
+      color: white;
+    }
+    .overlay-text-buttons .send-btn:hover { background: #5E35B1; }
+    .overlay-text-buttons .reset-btn {
+      background: #B39DDB;
+      color: white;
+    }
+    .overlay-text-buttons .reset-btn:hover { background: #9575CD; }
+    .overlay-text-buttons button:disabled {
+      background: #ccc;
+      color: #999;
+      cursor: not-allowed;
+    }
+    .overlay-text-status {
+      font-size: 11px;
+      color: #7E57C2;
+      margin-top: 8px;
+      min-height: 14px;
+    }
+
     /* ==================== TASK FLOWS PANEL ==================== */
     .task-flows-panel {
       padding: 0;
@@ -708,8 +780,25 @@
         <div id="responsesContainer"></div>
       </div>
 
-      <!-- RIGHT PANEL: Task Flows -->
+      <!-- RIGHT PANEL: Overlay Text Control + Task Flows -->
       <div class="tools-right-panel">
+        <!-- Overlay Text Control -->
+        <div class="overlay-text-controls">
+          <h4>🎭 Overlay Text Control</h4>
+
+          <label>Thinking Text (생각 중):</label>
+          <input type="text" id="overlayThinkingText" value="생각 중" placeholder="생각 중" />
+
+          <label>Listening Text (듣고 있어요):</label>
+          <input type="text" id="overlayListeningText" value="듣고 있어요" placeholder="듣고 있어요" />
+
+          <div class="overlay-text-buttons">
+            <button onclick="sendOverlayText()" class="send-btn">Send to Phone</button>
+            <button onclick="resetOverlayText()" class="reset-btn">Reset Defaults</button>
+          </div>
+          <div class="overlay-text-status" id="overlayTextStatus"></div>
+        </div>
+
         <div class="task-flows-panel">
           <h4>🧭 Task Flows</h4>
 
