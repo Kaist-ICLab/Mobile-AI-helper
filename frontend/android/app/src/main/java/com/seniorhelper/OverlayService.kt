@@ -890,8 +890,14 @@ class OverlayService : Service() {
         mainHandler.post {
             if (::messagesContainer.isInitialized) {
                 messagesContainer.removeAllViews()
-                minimizedMessageContainer.removeAllViews()
                 agentResponseViewList.clear()
+                userStatusViewList.clear()
+                activeDotAnimators.forEach { it.cancel() }
+                activeDotAnimators.clear()
+                showLoadingBubbles()
+            }
+            if (::minimizedMessageContainer.isInitialized){
+                minimizedMessageContainer.removeAllViews()
                 userStatusViewList.clear()
                 activeDotAnimators.forEach { it.cancel() }
                 activeDotAnimators.clear()
