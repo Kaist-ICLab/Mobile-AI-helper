@@ -702,7 +702,13 @@
 
       <div class="input-area">
         <textarea id="replyText" placeholder="Type your response here..." disabled></textarea>
-        <button onclick="sendReply()" id="sendButton" disabled>Send Response</button>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+            <button onclick="sendReply()" id="sendButton" disabled>Send Response</button>
+            <div style="display: flex; gap: 8px;">
+                <button onclick="sendReplyWithOverlay('thinking')" id="sendThinkingBtn" disabled style="flex: 1; min-height: 48px; background: #FFB300; color: white;">Send + Thinking</button>
+                <button onclick="sendReplyWithOverlay('listening')" id="sendListeningBtn" disabled style="flex: 1; min-height: 48px; background: #64B5F6; color: white;">Send + Listening</button>
+            </div>
+        </div>
       </div>
     </div>
 

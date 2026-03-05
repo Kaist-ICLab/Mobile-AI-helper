@@ -812,6 +812,8 @@ async function connectToSession() {
     statusDot.classList.add('connected');
     document.getElementById('replyText').disabled = false;
     document.getElementById('sendButton').disabled = false;
+    document.getElementById('sendThinkingBtn').disabled = false;
+    document.getElementById('sendListeningBtn').disabled = false;
 
     connectBtn.textContent = 'Connected';
     connectBtn.style.background = '#1976D2';
@@ -918,6 +920,41 @@ async function sendReply() {
     loadMessages();
     } catch (e) {
     alert('Error sending: ' + e);
+    }
+}
+
+async function sendReplyWithOverlay(overlayType) {
+    const text = document.getElementById('replyText').value.trim();
+    if (!text || !currentSessionId) return;
+    
+    try {
+        // Send actual text message
+        await fetch(`${API_URL}/message`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ session_id: currentSessionId, role: 'wizard', text })
+        });
+        
+        // Send overlay command
+        let overlayPayload = { overlay_text: {} };
+        if (overlayType === 'thinking') {
+            overlayPayload.overlay_text.thinking_text = "생각 중";
+            overlayPayload.overlay_text.listening_text = "";
+        } else if (overlayType === 'listening') {
+            overlayPayload.overlay_text.thinking_text = "";
+            overlayPayload.overlay_text.listening_text = "듣고 있어요";
+        }
+        
+        await fetch(`${API_URL}/message`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ session_id: currentSessionId, role: 'wizard', text: JSON.stringify(overlayPayload) })
+        });
+        
+        document.getElementById('replyText').value = '';
+        loadMessages();
+    } catch (e) {
+        alert('Error sending: ' + e);
     }
 }
 
