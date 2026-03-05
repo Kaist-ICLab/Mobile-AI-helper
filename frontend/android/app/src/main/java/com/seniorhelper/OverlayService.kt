@@ -331,7 +331,8 @@ class OverlayService : Service() {
             }
         }
         titleContainer = FrameLayout(this).apply {
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            val fixedWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 140f, resources.displayMetrics).toInt()
+            layoutParams = LinearLayout.LayoutParams(fixedWidth, LinearLayout.LayoutParams.WRAP_CONTENT)
         }
         titleView = TextView(this).apply {
             text = "AI 도우미"

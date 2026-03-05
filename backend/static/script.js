@@ -936,13 +936,16 @@ async function sendReplyWithOverlay(overlayType) {
         });
         
         // Send overlay command
-        let overlayPayload = { overlay_text: {} };
+        let overlayPayload = { 
+            type: 'overlay_text',
+            thinking_text: "",
+            listening_text: ""
+        };
+        
         if (overlayType === 'thinking') {
-            overlayPayload.overlay_text.thinking_text = "생각 중";
-            overlayPayload.overlay_text.listening_text = "";
+            overlayPayload.thinking_text = "생각 중";
         } else if (overlayType === 'listening') {
-            overlayPayload.overlay_text.thinking_text = "";
-            overlayPayload.overlay_text.listening_text = "듣고 있어요";
+            overlayPayload.listening_text = "듣고 있어요";
         }
         
         await fetch(`${API_URL}/message`, {
