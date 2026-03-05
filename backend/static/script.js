@@ -398,40 +398,6 @@ function setOverlayTextStatus(msg) {
     el.textContent = msg || '';
 }
 
-async function sendOverlayText() {
-    if (!currentSessionId) {
-    alert('Connect to a session first!');
-    return;
-    }
-
-    const thinkingText = (document.getElementById('overlayThinkingText').value || '').trim();
-    const listeningText = (document.getElementById('overlayListeningText').value || '').trim();
-
-    if (!thinkingText && !listeningText) {
-    alert('Please enter at least one text value');
-    return;
-    }
-
-    const payload = {
-    type: 'overlay_text',
-    thinking_text: thinkingText || OVERLAY_DEFAULT_THINKING,
-    listening_text: listeningText || OVERLAY_DEFAULT_LISTENING
-    };
-
-    try {
-    await fetch(`${API_URL}/message`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_id: currentSessionId, role: 'wizard', text: JSON.stringify(payload) })
-    });
-    console.log('Overlay text command sent:', payload);
-    setOverlayTextStatus('Both sent ✅');
-    loadMessages();
-    } catch (e) {
-    alert('Error sending overlay text command: ' + e);
-    setOverlayTextStatus('Send failed');
-    }
-}
 
 async function sendOverlayThinkingText() {
     if (!currentSessionId) {
@@ -497,11 +463,6 @@ async function sendOverlayListeningText() {
     }
 }
 
-function resetOverlayText() {
-    document.getElementById('overlayThinkingText').value = OVERLAY_DEFAULT_THINKING;
-    document.getElementById('overlayListeningText').value = OVERLAY_DEFAULT_LISTENING;
-    setOverlayTextStatus('Reset to defaults');
-}
 
 function parseOverlayTextCommand(text) {
     try {
@@ -1236,7 +1197,6 @@ document.getElementById('replyText').addEventListener('keydown', function(e) {
     if (e.key === 'Enter' && !e.ctrlKey && !e.shiftKey) { e.preventDefault(); sendReply(); }
 });
 
-// Init
 window.addEventListener('load', function() {
     updateTutorialUI();
     (async function() {
