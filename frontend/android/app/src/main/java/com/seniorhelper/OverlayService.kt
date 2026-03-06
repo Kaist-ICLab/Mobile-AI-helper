@@ -321,7 +321,7 @@ class OverlayService : Service() {
 
         minimizeButton = TextView(this).apply {
             text = "💬"
-            textSize = 24f
+            textSize = 20f
             setTextColor(Color.WHITE)
             setTypeface(null, android.graphics.Typeface.BOLD)
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
@@ -346,10 +346,12 @@ class OverlayService : Service() {
         titleContainer.addView(titleView)
         repeatButton = Button(this).apply {
             text = "다시듣기"
-            textSize = 20f
-            setPadding(16, 12, 16, 12)
+            textSize = 15f
+            isSingleLine = true
+            maxLines = 1
+            setPadding(12, 12, 12, 12)
             setTextColor(0xFFFFFFFF.toInt())
-            setBackgroundColor(0xFF4CAF50.toInt()) // Green color
+            setBackgroundColor(0xFF4CAF50.toInt())
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -366,8 +368,10 @@ class OverlayService : Service() {
         }
         interveneButton = Button(this).apply {
             text = "일시정지"
-            textSize = 20f
-            setPadding(16, 12, 16, 12)
+            textSize = 15f
+            isSingleLine = true
+            maxLines = 1
+            setPadding(12, 12, 12, 12)
             setTextColor(0xFFFFFFFF.toInt())
             setBackgroundColor(0xFFD32F2F.toInt())
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
@@ -627,7 +631,7 @@ class OverlayService : Service() {
         val animView = createAnimatedDots(Color.WHITE)
         val textView = TextView(this).apply {
             text = textOverride
-            textSize = 24f
+            textSize = 20f
             maxLines = 1
             setTextColor(Color.WHITE)
             setTypeface(null, android.graphics.Typeface.BOLD)
@@ -652,7 +656,7 @@ class OverlayService : Service() {
         val amplitude = 15f
         val duration = 600L
 
-        for (i in 0 until 3) {
+        for (i in 0 until 2) {
             val dot = TextView(this).apply {
                 text = "●"; textSize = dotSize; setTextColor(color)
                 gravity = Gravity.CENTER
@@ -718,7 +722,7 @@ class OverlayService : Service() {
         val color = if (recording) 0xFF42A5F5.toInt() else 0xFFD32F2F.toInt()
         interveneButton.setBackgroundColor(color)
         interveneButton.text = if (recording) "듣기 중지" else "일시 정지"
-        if (recording) showUserMessage("듣고 있어요...")
+        if (recording) showLoadingBubbles("듣고 있어요")
     }
 
     // ==================== AUDIO LOGIC (RECORDING LOGS ONLY) ====================
